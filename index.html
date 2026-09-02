@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Productos OEM</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===================== Menú lateral ===================== -->
+  <aside class="sidebar" data-name="Menu lateral">
+
+    <div class="sidebar-top">
+      <div class="sidebar-logo">
+        <img src="assets/logo-apymsa.png" alt="Logo Apymsa">
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">
+          <span>Gestión</span>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-item">
+            <span>Inventarios riesgos</span>
+          </div>
+
+          <div class="nav-subgroup">
+            <div class="nav-item--sub">
+              <span>Sucursal más cercana</span>
+            </div>
+            <div class="nav-item--active">
+              <span>Clientes con configuración personalizada</span>
+            </div>
+          </div>
+
+          <div class="nav-item">
+            <span>Administrar Etiquetas</span>
+          </div>
+        </div>
+
+        <div class="nav-group" id="menuItems"></div>
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <span>© 2026 - Administrador  operaciones</span>
+      <span>Versión 3.0.0.8</span>
+    </div>
+  </aside>
+
+  <!-- ===================== Contenido ===================== -->
+  <main class="content">
+
+    <div class="content-header">
+      <h1>Productos OEM</h1>
+      <div class="logout">
+        <svg width="7" height="9" viewBox="0 0 7 9" fill="rgb(0,0,0)">
+          <path d="M0 0h7v9H0z" opacity="0"></path>
+          <path d="M3.5 0 L7 4 L4.2 4 L4.2 9 L2.8 9 L2.8 4 L0 4 Z" fill-rule="nonzero"></path>
+        </svg>
+        <span>Cerrar sesión</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn btn--primary">Exportar</button>
+      <button type="button" class="btn btn--primary">Importar</button>
+      <button type="button" class="btn btn--success">Descargar plantilla</button>
+    </div>
+
+    <div class="filters">
+      <div class="filter-field">
+        <label for="selSucursal">Sucursal:</label>
+        <div class="select select--sucursal" id="selSucursal"
+             data-options="Todas|Ciudad Juárez La Raza|Tijuana Centro"></div>
+      </div>
+
+      <div class="filter-field">
+        <label for="selRegion">Región:</label>
+        <div class="select select--region" id="selRegion"
+             data-options="Todas|Norte|Centro"></div>
+      </div>
+
+      <button type="button" class="btn btn--muted">Filtrar</button>
+
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+    <div class="table-wrapper">
+      <div class="table" id="table"></div>
+    </div>
+
+    <div class="footer-bar">
+      <label for="selRows">Registros por página:</label>
+      <div class="select select--rows" id="selRows" data-options="20|50|100"></div>
+    </div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
