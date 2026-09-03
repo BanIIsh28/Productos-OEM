@@ -137,7 +137,7 @@
   var PAGE_WINDOW = 4;
 
   var page = 1;
-  var pageSize = 20;
+  var pageSize = 25;
 
   function totalPages() {
     return Math.max(1, Math.ceil(filteredRows().length / pageSize));

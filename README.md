@@ -35,7 +35,7 @@ componentes e iconografía).
   vaciar un campo retira su filtro. Si ninguna fila coincide se muestra un aviso.
 
 - **Paginación**: el número de páginas se calcula con los registros que dejan
-  los filtros y el valor de `Registros por página` (20, 50 o 100). Se muestran
+  los filtros y el valor de `Registros por página` (25, 50, 75 o 100). Se muestran
   cuatro números a la vez en una ventana que sigue a la página actual; mientras
   queden páginas más allá de esa ventana aparecen los puntos y el número de la
   última página, que lleva directamente a ella. El botón de la página actual y
