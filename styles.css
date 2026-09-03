@@ -616,3 +616,31 @@ a:hover { color: rgb(0, 50, 90); }
 
   .sidebar-footer span { font-size: clamp(12px, 1.5vh, 16px); }
 }
+
+/* ---------- Aviso emergente ---------- */
+
+.notice {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  max-width: 380px;
+  background: rgb(47, 51, 55);
+  color: rgb(255, 255, 255);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 12px 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 100;
+}
+
+.notice--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.notice--ok { border-left: 4px solid rgb(74, 186, 127); }
+.notice--warn { border-left: 4px solid rgb(211, 160, 60); }

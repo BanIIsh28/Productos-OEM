@@ -10,7 +10,8 @@ componentes e iconografía).
 | --- | --- |
 | `index.html` | Estructura del módulo: menú lateral, encabezado, acciones, filtros, tabla y pie. |
 | `styles.css` | Estilos completos de la interfaz. |
-| `app.js` | Datos de la vista y comportamiento (paginación, tabla y selects). |
+| `app.js` | Datos de la vista y comportamiento (paginación, tabla, filtros, orden, exportación y selects). |
+| `xlsx.js` | Generador de archivos `.xlsx` en el navegador, sin dependencias. |
 | `assets/logo-apymsa.png` | Logotipo del encabezado del menú lateral. |
 
 ## Interacciones incluidas
@@ -36,6 +37,11 @@ componentes e iconografía).
   `Región`, orden alfabético. Cada clic alterna ascendente y descendente, y la
   flecha del sentido activo se resalta. `Dirección` y `Centro asignado` no
   ordenan.
+
+- **Exportar a Excel**: el botón `Exportar` descarga un archivo `.xlsx` real con
+  los registros de la tabla, respetando los filtros y el orden aplicados. El
+  encabezado se genera con el azul corporativo y los identificadores como valores
+  numéricos. Un aviso confirma el nombre del archivo y cuántos registros incluye.
 
 ## Tipografía
 

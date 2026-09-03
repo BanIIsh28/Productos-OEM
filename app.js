@@ -264,6 +264,74 @@
     renderRows();
   }
 
+  /* ---------- Exportar a Excel ---------- */
+
+  /* Ancho aproximado de cada columna en la hoja de cálculo */
+  var SHEET_WIDTHS = [12, 26, 52, 14, 18];
+
+  function timestamp() {
+    var now = new Date();
+    function pad(n) { return String(n).padStart(2, '0'); }
+    return now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) +
+      '-' + pad(now.getHours()) + pad(now.getMinutes());
+  }
+
+  /* Exporta lo que se está viendo: filtros y orden aplicados */
+  function exportToExcel(button) {
+    var rows = filteredRows();
+
+    if (rows.length === 0) {
+      notify('No hay registros que exportar con los filtros aplicados', 'warn');
+      return;
+    }
+
+    var blob = buildXlsx({
+      sheetName: 'Productos OEM',
+      headers: columns.map(function (col) { return col.label; }),
+      rows: rows,
+      widths: SHEET_WIDTHS
+    });
+
+    var name = 'Productos-OEM_' + timestamp() + '.xlsx';
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+
+    notify('Se descargó ' + name + ' con ' + rows.length +
+      (rows.length === 1 ? ' registro' : ' registros'), 'ok');
+  }
+
+  /* Aviso temporal en la esquina inferior derecha */
+  var noticeTimer = null;
+
+  function notify(message, kind) {
+    var notice = document.getElementById('notice');
+    if (!notice) {
+      notice = el('div', 'notice');
+      notice.id = 'notice';
+      notice.setAttribute('role', 'status');
+      document.body.appendChild(notice);
+    }
+
+    notice.textContent = message;
+    notice.className = 'notice notice--visible' + (kind ? ' notice--' + kind : '');
+
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(function () {
+      notice.className = 'notice';
+    }, 4000);
+  }
+
+  function bindExport() {
+    var button = document.getElementById('btnExportar');
+    button.addEventListener('click', function () { exportToExcel(button); });
+  }
+
   /* ---------- Selects interactivos ---------- */
 
   function buildSelect(root, caretSvg) {
@@ -339,6 +407,7 @@
   }
 
   renderPagination();
+  bindExport();
   renderTable();
   renderSelects();
 })();
