@@ -275,6 +275,13 @@ a:hover { color: rgb(0, 50, 90); }
 
 .btn--end { margin-left: auto; }
 
+.btn--filter {
+  background: rgb(0, 113, 179);   /* #0071B3 */
+  padding: 10px 20px;
+}
+.btn--filter:hover { background: rgb(0, 96, 152); }
+.btn--filter:active { background: rgb(0, 82, 130); }
+
 .btn--primary { background: rgb(0, 75, 131); }
 .btn--primary:hover { background: rgb(0, 60, 106); }
 .btn--primary:active { background: rgb(0, 48, 85); }
@@ -339,18 +346,21 @@ a:hover { color: rgb(0, 50, 90); }
 
 .select__trigger:hover { background: rgb(246, 246, 246); }
 
-.select--sucursal .select__trigger svg,
-.select--region .select__trigger svg { transform: matrix(1, 0, 0, -1, 0, 0); }
+.select--tipo .select__trigger svg,
+.select--alcance .select__trigger svg,
+.select--estatus .select__trigger svg { transform: matrix(1, 0, 0, -1, 0, 0); }
 
 .select__trigger svg { transition: transform 0.15s ease; }
 
-.select--sucursal.select--open .select__trigger svg,
-.select--region.select--open .select__trigger svg { transform: matrix(1, 0, 0, 1, 0, 0); }
+.select--tipo.select--open .select__trigger svg,
+.select--alcance.select--open .select__trigger svg,
+.select--estatus.select--open .select__trigger svg { transform: matrix(1, 0, 0, 1, 0, 0); }
 
 .select--rows.select--open .select__trigger svg { transform: matrix(1, 0, 0, -1, 0, 0); }
 
-.select--sucursal { width: 208px; }
-.select--region { width: 85px; }
+.select--tipo { width: 110px; }
+.select--alcance { width: 145px; }
+.select--estatus { width: 110px; }
 
 .select__menu {
   position: absolute;
@@ -616,7 +626,7 @@ a:hover { color: rgb(0, 50, 90); }
   .content { padding: 22px 20px 24px 16px; }
   .filters { flex-wrap: wrap; row-gap: 12px; }
   .pagination { margin-left: auto; }
-  .select--sucursal { width: 170px; }
+  .select--alcance { width: 125px; }
 }
 
 @media (max-width: 1024px) {

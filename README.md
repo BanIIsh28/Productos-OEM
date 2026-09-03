@@ -36,10 +36,14 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
 
 ## Interacciones incluidas
 
-- **Selects desplegables**: `Sucursal`, `Región` y `Registros por página` son
-  desplegables funcionales con 3 opciones cada uno (datos de ejemplo). Se abren al
-  hacer clic, marcan la opción seleccionada, y se cierran al elegir una opción,
-  al hacer clic fuera o con `Esc`.
+- **Filtros superiores**: `Tipo`, `Alcance` y `Estatus` son desplegables con las
+  mismas opciones que sus columnas, más `Todos` como valor inicial. La elección no
+  se aplica hasta pulsar `Filtrar`, que permanece deshabilitado —en el gris de los
+  controles sin acción— mientras no haya un cambio pendiente y toma su color
+  `#0071B3` en cuanto lo hay. Los tres filtros se combinan entre sí y con los
+  buscadores de columna.
+- **Selects desplegables**: se abren al hacer clic, marcan la opción seleccionada,
+  y se cierran al elegir una opción, al hacer clic fuera o con `Esc`.
 - **Botones con hover**: `Exportar` e `Importar` (azul), `Descargar plantilla`
   (verde) y los botones de paginación oscurecen ligeramente su color base al
   pasar el cursor, con un tono aún más oscuro al presionar.
@@ -47,10 +51,10 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
   este estado (por ejemplo `Filtrar`), sin efecto hover.
 - **Filtrado por columna**: cada campo `Buscar` del encabezado filtra únicamente
   su propia columna —solo `SKU`, `Proveedor` y `Código externo` lo llevan—,
-  buscando entre **todos** los registros y no solo entre los
-  visibles en la página actual. El filtro se ejecuta al pulsar `Enter` y requiere un mínimo
-  de 3 caracteres —salvo en `Sucursal ID`, donde basta 1—; con menos, el campo se
-  marca en rojo y no filtra. Los filtros
+  buscando entre **todos** los registros y no solo entre los visibles en la página
+  actual. El filtro se ejecuta al pulsar `Enter` y requiere un mínimo de 3
+  caracteres —salvo en `SKU`, donde basta 1—; con menos, el campo se marca en rojo
+  y no filtra. Los filtros
   de varias columnas se combinan, la comparación ignora mayúsculas y acentos, y
   vaciar un campo retira su filtro. Si ninguna fila coincide se muestra un aviso.
 

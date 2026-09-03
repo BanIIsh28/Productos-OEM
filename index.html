@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Productos OEM</title>
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
 
@@ -61,18 +61,24 @@
 
     <div class="filters">
       <div class="filter-field">
-        <label for="selSucursal">Sucursal:</label>
-        <div class="select select--sucursal" id="selSucursal"
-             data-options="Todas|Ciudad Juárez La Raza|Tijuana Centro"></div>
+        <label for="selTipo">Tipo:</label>
+        <div class="select select--tipo" id="selTipo" data-options="Todos|GS1|No GS1"></div>
       </div>
 
       <div class="filter-field">
-        <label for="selRegion">Región:</label>
-        <div class="select select--region" id="selRegion"
-             data-options="Todas|Norte|Centro"></div>
+        <label for="selAlcance">Alcance:</label>
+        <div class="select select--alcance" id="selAlcance"
+             data-options="Todos|Producto|Presentación"></div>
       </div>
 
-      <button type="button" class="btn btn--disabled" disabled>Filtrar</button>
+      <div class="filter-field">
+        <label for="selEstatus">Estatus:</label>
+        <div class="select select--estatus" id="selEstatus"
+             data-options="Todos|Activo|Inactivo"></div>
+      </div>
+
+      <button type="button" class="btn btn--filter" id="btnFiltrar" disabled
+              title="Cambia algún filtro para poder aplicarlo">Filtrar</button>
 
       <div class="pagination" id="pagination"></div>
     </div>
@@ -88,8 +94,8 @@
   </main>
 </div>
 
-<script src="xlsx.js?v=9"></script>
-<script src="toast.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="xlsx.js?v=10"></script>
+<script src="toast.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>

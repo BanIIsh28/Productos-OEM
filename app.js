@@ -14,7 +14,7 @@
     { label: 'SKU', sortable: true, numeric: true, search: true, minChars: 1 },
     { label: 'Proveedor', sortable: true, search: true },
     { label: 'Tipo' },
-    { label: 'Código externo', numeric: true, search: true, minChars: 1 },
+    { label: 'Código externo', numeric: true, search: true },
     { label: 'Alcance' },
     { label: 'Empaque' },
     { label: 'Cantidad' },
@@ -23,6 +23,8 @@
   ];
 
   var COL_SKU = 0;
+  var COL_TIPO = 2;
+  var COL_ALCANCE = 4;
   var COL_ESTATUS = 7;
 
   /* ---------- Registros de ejemplo ---------- */
@@ -123,6 +125,29 @@
   var filters = {};
   var sort = { index: null, dir: 'asc' };
 
+  /* Filtros superiores: 'applied' es lo que la tabla está mostrando y
+     'pending' lo que el usuario ha elegido pero aún no ha aplicado. */
+  var TODOS = 'Todos';
+  var applied = { tipo: TODOS, alcance: TODOS, estatus: TODOS };
+  var pending = { tipo: TODOS, alcance: TODOS, estatus: TODOS };
+
+  function hasPendingChanges() {
+    return pending.tipo !== applied.tipo ||
+      pending.alcance !== applied.alcance ||
+      pending.estatus !== applied.estatus;
+  }
+
+  /* El registro cumple los filtros superiores aplicados */
+  function matchesApplied(cells) {
+    if (applied.tipo !== TODOS && cells[COL_TIPO] !== applied.tipo) { return false; }
+    if (applied.alcance !== TODOS && cells[COL_ALCANCE] !== applied.alcance) { return false; }
+    if (applied.estatus !== TODOS) {
+      var activo = applied.estatus === 'Activo';
+      if (cells[COL_ESTATUS] !== activo) { return false; }
+    }
+    return true;
+  }
+
   function minCharsFor(index) {
     return columns[index].minChars || MIN_CHARS;
   }
@@ -137,7 +162,9 @@
 
   function filteredRows() {
     var active = Object.keys(filters);
-    var rows = active.length === 0 ? dataRows.slice() : dataRows.filter(function (cells) {
+
+    var rows = dataRows.filter(function (cells) {
+      if (!matchesApplied(cells)) { return false; }
       return active.every(function (index) {
         return normalize(cells[index]).indexOf(filters[index]) !== -1;
       });
@@ -532,6 +559,36 @@
       .addEventListener('click', downloadTemplate);
   }
 
+  /* ---------- Filtros superiores ---------- */
+
+  function updateFilterButton() {
+    var btn = document.getElementById('btnFiltrar');
+    var pendiente = hasPendingChanges();
+
+    btn.disabled = !pendiente;
+    btn.title = pendiente
+      ? 'Aplicar los filtros seleccionados'
+      : 'Cambia algún filtro para poder aplicarlo';
+  }
+
+  function applyTopFilters() {
+    if (!hasPendingChanges()) { return; }
+
+    applied.tipo = pending.tipo;
+    applied.alcance = pending.alcance;
+    applied.estatus = pending.estatus;
+
+    page = 1;
+    renderPagination();
+    renderRows();
+    updateFilterButton();
+  }
+
+  function bindFilters() {
+    document.getElementById('btnFiltrar')
+      .addEventListener('click', applyTopFilters);
+  }
+
   /* ---------- Selects interactivos ---------- */
 
   function buildSelect(root, caretSvg, onSelect) {
@@ -597,8 +654,21 @@
   }
 
   function renderSelects() {
-    buildSelect(document.getElementById('selSucursal'), CARET_FILTER_SVG);
-    buildSelect(document.getElementById('selRegion'), CARET_FILTER_SVG);
+    /* Los filtros superiores solo anotan la elección; se aplica con "Filtrar" */
+    buildSelect(document.getElementById('selTipo'), CARET_FILTER_SVG, function (option) {
+      pending.tipo = option;
+      updateFilterButton();
+    });
+
+    buildSelect(document.getElementById('selAlcance'), CARET_FILTER_SVG, function (option) {
+      pending.alcance = option;
+      updateFilterButton();
+    });
+
+    buildSelect(document.getElementById('selEstatus'), CARET_FILTER_SVG, function (option) {
+      pending.estatus = option;
+      updateFilterButton();
+    });
     /* El número de registros por página redefine la paginación */
     buildSelect(document.getElementById('selRows'), CARET_ROWS_SVG, function (option) {
       pageSize = Number(option);
@@ -615,6 +685,7 @@
 
   renderPagination();
   bindExport();
+  bindFilters();
   renderTable();
   renderSelects();
 })();
