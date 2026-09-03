@@ -118,6 +118,10 @@ Se cierra con la `X`, con `Escape` o con cualquiera de sus botones; pulsar el
 fondo no la cierra, para no perder lo capturado por descuido. Devolver `false`
 desde el `onClick` de un botón la mantiene abierta.
 
+El cuerpo de la ventana no recorta su contenido: los desplegables se superponen
+al pie en lugar de provocar desplazamiento dentro del formulario. Si una ventana
+llega a superar la altura de la pantalla, quien se desplaza es el fondo.
+
 Los campos comparten la altura de los desplegables de los filtros (28 px) y el
 texto va a 12 px, salvo el título de la cabecera, a 14 px. El estilo del campo de
 solo lectura —el de `SKU`— queda reservado en `.field input[readonly]`, también

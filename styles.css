@@ -368,7 +368,7 @@ a:hover { color: rgb(0, 50, 90); }
   background: rgb(255, 255, 255);
   border: 1px solid rgb(0, 0, 0);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  z-index: 20;
+  z-index: 40;
   display: none;
 }
 
@@ -767,12 +767,13 @@ a:hover { color: rgb(0, 50, 90); }
   align-items: center;
   /* El pie mayor que la cabecera deja la ventana por encima del centro */
   padding: 24px 24px calc(12vh + 130px);
+  overflow-y: auto;
   z-index: 300;
 }
 
 .modal {
   width: min(612px, 100%);
-  max-height: 82vh;
+  flex-shrink: 0;
   background: rgb(255, 255, 255);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
   display: flex;
@@ -811,9 +812,11 @@ a:hover { color: rgb(0, 50, 90); }
 .modal__close:hover { opacity: 1; }
 .modal__close:focus-visible { outline: 2px solid rgb(255, 255, 255); outline-offset: 2px; }
 
+/* Sin recorte: los desplegables se superponen al pie en lugar de
+   provocar desplazamiento dentro del formulario */
 .modal__body {
   padding: 24px 20px;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .modal__footer {
