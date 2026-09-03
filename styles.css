@@ -450,7 +450,11 @@ a:hover { color: rgb(0, 50, 90); }
   /* SKU, Proveedor, Tipo, Código externo y Alcance comparten ancho;
      Empaque, Cantidad, Estatus y Acciones son más angostas */
   grid-template-columns:
-    repeat(5, minmax(0, 1fr))     /* SKU, Proveedor, Tipo, Código externo, Alcance */
+    minmax(0, 1fr)                /* SKU */
+    minmax(0, 1fr)                /* Proveedor */
+    minmax(0, 0.55fr)             /* Tipo */
+    minmax(0, 1fr)                /* Código externo */
+    minmax(0, 1fr)                /* Alcance */
     minmax(0, 0.55fr)             /* Empaque */
     minmax(0, 0.55fr)             /* Cantidad */
     minmax(0, 0.5fr)              /* Estatus */
@@ -730,6 +734,7 @@ a:hover { color: rgb(0, 50, 90); }
   flex-shrink: 0;
   padding: 0;
   border: none;
+  border-radius: 3px;
   justify-content: center;
   align-items: center;
   cursor: pointer;

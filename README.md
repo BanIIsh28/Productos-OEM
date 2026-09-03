@@ -27,12 +27,12 @@ componentes e iconografía).
 | Empaque | número de 1 a 20 |
 | Cantidad | número de 1 a 20 |
 | Estatus | interruptor circular que alterna activo (azul) e inactivo (gris) |
-| Acciones | botón ámbar con icono de lápiz y sugerencia `Editar` |
+| Acciones | botón ámbar de esquinas redondeadas con icono de lápiz relleno y sugerencia `Editar` |
 
 Los 182 registros de ejemplo se generan al cargar la vista, con valores aleatorios
-dentro de esos rangos. Las cinco primeras columnas comparten ancho; las de un solo
-número y las de control son más angostas, y cualquier valor más largo que su
-columna continúa en el siguiente renglón.
+dentro de esos rangos. `SKU`, `Proveedor`, `Código externo` y `Alcance` comparten
+ancho; `Tipo`, las de un solo número y las de control son más angostas, y
+cualquier valor más largo que su columna continúa en el siguiente renglón.
 
 ## Interacciones incluidas
 
@@ -62,10 +62,9 @@ columna continúa en el siguiente renglón.
   las flechas `<` y `>` sin destino quedan deshabilitados. Filtrar u ordenar
   devuelve a la primera página.
 - **Ordenamiento por columna**: las flechas del encabezado ordenan la tabla al
-  hacer clic sobre él. `Sucursal ID` usa orden numérico; `Nombre sucursal` y
-  `Región`, orden alfabético. Cada clic alterna ascendente y descendente, y la
-  flecha del sentido activo se resalta. `Dirección` y `Centro asignado` no
-  ordenan.
+  hacer clic sobre él, solo en `SKU` (orden numérico) y `Proveedor` (orden
+  alfabético). Cada clic alterna ascendente y descendente, y la flecha del
+  sentido activo se resalta.
 
 - **Exportar a Excel**: el botón `Exportar` descarga un archivo `.xlsx` real con
   los registros de la tabla, respetando los filtros y el orden aplicados. El
