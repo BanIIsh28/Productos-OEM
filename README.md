@@ -26,7 +26,7 @@ componentes e iconografía).
 | Alcance | `Producto` o `Presentación` |
 | Empaque | número de 1 a 20 |
 | Cantidad | número de 1 a 20 |
-| Estatus | interruptor circular que alterna activo e inactivo |
+| Estatus | interruptor circular que alterna activo (azul) e inactivo (gris) |
 | Acciones | botón ámbar con icono de lápiz y sugerencia `Editar` |
 
 Los 182 registros de ejemplo se generan al cargar la vista, con valores aleatorios
@@ -46,7 +46,8 @@ columna continúa en el siguiente renglón.
 - **Botones deshabilitados**: el gris `rgb(211, 211, 211)` está reservado para
   este estado (por ejemplo `Filtrar`), sin efecto hover.
 - **Filtrado por columna**: cada campo `Buscar` del encabezado filtra únicamente
-  su propia columna, buscando entre **todos** los registros y no solo entre los
+  su propia columna —solo `SKU`, `Proveedor` y `Código externo` lo llevan—,
+  buscando entre **todos** los registros y no solo entre los
   visibles en la página actual. El filtro se ejecuta al pulsar `Enter` y requiere un mínimo
   de 3 caracteres —salvo en `Sucursal ID`, donde basta 1—; con menos, el campo se
   marca en rojo y no filtra. Los filtros
