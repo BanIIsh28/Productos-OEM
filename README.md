@@ -127,7 +127,24 @@ texto va a 12 px, salvo el título de la cabecera, a 14 px. El estilo del campo 
 solo lectura —el de `SKU`— queda reservado en `.field input[readonly]`, también
 disponible como clase `.input--readonly` para reutilizarlo en otros formularios.
 
-El botón `Agregar equivalencia +` abre una ventana de prueba con esta base.
+### Formulario de equivalencia
+
+El botón `Agregar equivalencia +` abre una ventana con este formulario:
+
+| Fila | Campos |
+| --- | --- |
+| 1 | `SKU` (código, con búsqueda) y `Nombre del producto` (solo lectura) |
+| 2 | `Proveedor` (con búsqueda) y `Código externo` |
+| 3 | `Alcance`, `Empaque` y `Cantidad` |
+
+`SKU` admite solo dígitos y, a partir de 3, despliega los productos del catálogo
+cuyo código contiene lo escrito, mostrando el código seguido del nombre. Se ven
+cinco a la vez y el resto se alcanza desplazando la lista; al elegir uno se
+llenan el código y el nombre. `Proveedor` funciona igual sobre los nombres de
+proveedores. `Alcance` arranca en `- Selecciona un alcance -`.
+
+El catálogo se inventa al cargar la vista: 30 familias de refacción por 30
+aplicaciones, 900 productos con código de 7 dígitos agrupados por familia.
 
 ## Tipografía
 

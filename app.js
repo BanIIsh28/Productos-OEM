@@ -44,6 +44,55 @@
     'Proveedora Mecánica Altamira', 'Refacciones Querétaro Express', 'Grupo Automotriz Robles'
   ];
 
+  /* Catálogo de productos para la búsqueda por código.
+     Los códigos se agrupan en familias de prefijo común, de modo que
+     teclear tres dígitos devuelva un conjunto de coincidencias. */
+  var FAMILIAS = [
+    'Balata delantera cerámica', 'Balata trasera semimetálica', 'Filtro de aceite',
+    'Filtro de aire', 'Filtro de cabina', 'Bujía de iridio', 'Amortiguador delantero',
+    'Amortiguador trasero', 'Banda de distribución', 'Banda accesorios',
+    'Bomba de agua', 'Disco de freno ventilado', 'Tambor de freno', 'Rótula inferior',
+    'Terminal de dirección', 'Kit de clutch', 'Radiador de aluminio', 'Alternador',
+    'Motor de arranque', 'Sensor de oxígeno', 'Bomba de gasolina', 'Junta de cabeza',
+    'Retén de cigüeñal', 'Soporte de motor', 'Horquilla de suspensión',
+    'Maza de rueda', 'Cilindro maestro de freno', 'Bobina de encendido',
+    'Termostato', 'Válvula PCV'
+  ];
+
+  var APLICACIONES = [
+    'Nissan Tsuru 1.6', 'Nissan Versa 1.6', 'Nissan March 1.6', 'VW Jetta A4',
+    'VW Vento 1.6', 'VW Gol 1.6', 'Chevrolet Aveo 1.6', 'Chevrolet Spark 1.2',
+    'Chevrolet Silverado 5.3', 'Ford Ranger 2.5', 'Ford Figo 1.5', 'Ford F-150 5.0',
+    'Toyota Corolla 1.8', 'Toyota Hilux 2.7', 'Honda Civic 1.8', 'Honda CR-V 2.4',
+    'Mazda 3 2.0', 'Mazda CX-5 2.5', 'Kia Rio 1.6', 'Hyundai Accent 1.6',
+    'Renault Logan 1.6', 'Renault Duster 2.0', 'Seat Ibiza 1.6', 'Suzuki Swift 1.4',
+    'Dodge Attitude 1.5', 'RAM 700 1.6', 'Jeep Compass 2.4', 'Peugeot 208 1.6',
+    'Fiat Uno 1.4', 'Mitsubishi L200 2.4'
+  ];
+
+  /* Cada producto es { codigo, nombre } */
+  var CATALOGO = (function buildCatalog() {
+    var productos = [];
+    var usados = {};
+
+    FAMILIAS.forEach(function (familia, f) {
+      /* Una familia por prefijo: 100xxxx, 101xxxx, ... */
+      var prefijo = String(100 + f);
+
+      APLICACIONES.forEach(function (aplicacion) {
+        var codigo;
+        do {
+          codigo = prefijo + randomCode(4);
+        } while (usados[codigo]);
+        usados[codigo] = true;
+
+        productos.push({ codigo: codigo, nombre: familia + ' — ' + aplicacion });
+      });
+    });
+
+    return productos;
+  })();
+
   var TIPOS = ['GS1', 'No GS1'];
   var ALCANCES = ['Producto', 'Presentación'];
 
@@ -561,55 +610,170 @@
 
   /* ---------- Ventana de equivalencia ---------- */
 
-  /* Campo de texto de solo lectura */
-  function readonlyField(label, value) {
-    var field = el('div', 'field');
+  /* Caracteres mínimos para que una búsqueda del formulario devuelva
+     sugerencias, y número de ellas visibles antes de desplazar */
+  var SUGGEST_MIN_CHARS = 3;
 
+  function field(label, span) {
+    var wrapper = el('div', 'field' + (span ? ' field--span' + span : ''));
     var caption = el('label');
     caption.textContent = label;
+    wrapper.appendChild(caption);
+    return wrapper;
+  }
+
+  /* Campo de texto sencillo */
+  function textField(label, span, options) {
+    var opts = options || {};
+    var wrapper = field(label, span);
 
     var input = el('input');
     input.type = 'text';
-    input.value = value;
-    input.readOnly = true;
+    if (opts.placeholder) { input.placeholder = opts.placeholder; }
+    if (opts.readOnly) { input.readOnly = true; }
+    if (opts.digitsOnly) {
+      input.inputMode = 'numeric';
+      input.addEventListener('input', function () {
+        var limpio = input.value.replace(/\D/g, '');
+        if (limpio !== input.value) { input.value = limpio; }
+      });
+    }
 
-    field.appendChild(caption);
-    field.appendChild(input);
-    return field;
+    wrapper.appendChild(input);
+    wrapper._input = input;
+    return wrapper;
+  }
+
+  /* Campo de texto con sugerencias, presentadas como las de un select.
+     search(texto) devuelve la lista de coincidencias y label(item) el
+     texto de cada línea; onSelect recibe el elegido. */
+  function suggestField(label, span, config) {
+    var wrapper = field(label, span);
+    wrapper.classList.add('suggest');
+
+    var input = el('input');
+    input.type = 'text';
+    input.autocomplete = 'off';
+    if (config.placeholder) { input.placeholder = config.placeholder; }
+    if (config.digitsOnly) { input.inputMode = 'numeric'; }
+
+    var menu = el('div', 'suggest__menu');
+    menu.setAttribute('role', 'listbox');
+
+    function close() {
+      wrapper.classList.remove('suggest--open');
+      menu.innerHTML = '';
+    }
+
+    function open(items) {
+      menu.innerHTML = '';
+
+      if (items.length === 0) {
+        var vacio = el('div', 'suggest__empty');
+        vacio.textContent = 'Sin coincidencias';
+        menu.appendChild(vacio);
+      } else {
+        items.forEach(function (item) {
+          var option = el('button', 'suggest__option');
+          option.type = 'button';
+          option.setAttribute('role', 'option');
+          option.textContent = config.label(item);
+          option.addEventListener('mousedown', function (event) {
+            /* mousedown para que el campo no pierda antes el foco */
+            event.preventDefault();
+            config.onSelect(item);
+            close();
+          });
+          menu.appendChild(option);
+        });
+      }
+
+      wrapper.classList.add('suggest--open');
+    }
+
+    input.addEventListener('input', function () {
+      if (config.digitsOnly) {
+        var limpio = input.value.replace(/\D/g, '');
+        if (limpio !== input.value) { input.value = limpio; }
+      }
+
+      var texto = input.value.trim();
+      if (texto.length < SUGGEST_MIN_CHARS) { close(); return; }
+      open(config.search(texto));
+    });
+
+    input.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && wrapper.classList.contains('suggest--open')) {
+        event.stopPropagation();
+        close();
+      }
+    });
+
+    input.addEventListener('blur', close);
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(menu);
+    wrapper._input = input;
+    return wrapper;
   }
 
   /* Campo con el desplegable propio del módulo */
-  function selectField(label, options) {
-    var field = el('div', 'field');
-
-    var caption = el('label');
-    caption.textContent = label;
+  function selectField(label, span, options) {
+    var wrapper = field(label, span);
 
     var select = el('div', 'select');
     select.setAttribute('data-options', options.join('|'));
 
-    field.appendChild(caption);
-    field.appendChild(select);
+    wrapper.appendChild(select);
 
     /* El desplegable se construye una vez insertado en el documento */
-    field._initSelect = function () { buildSelect(select, CARET_FILTER_SVG); };
-    return field;
+    wrapper._initSelect = function () { buildSelect(select, CARET_FILTER_SVG); };
+    return wrapper;
   }
 
-  /* Ventana base, por ahora sin efecto sobre los datos */
   function openEquivalenceModal() {
     var body = el('div', 'form-grid');
 
-    var campos = [
-      readonlyField('SKU', ''),
-      readonlyField('Proveedor', ''),
-      selectField('Tipo', TIPOS),
-      selectField('Alcance', ALCANCES),
-      readonlyField('Código externo', ''),
-      selectField('Estatus', ['Activo', 'Inactivo'])
-    ];
+    /* Fila 1: código de producto y su nombre */
+    var nombreProducto = textField('Nombre del producto', 4, { readOnly: true });
 
-    campos.forEach(function (field) { body.appendChild(field); });
+    var sku = suggestField('SKU', 2, {
+      digitsOnly: true,
+      placeholder: 'Código',
+      search: function (texto) {
+        return CATALOGO.filter(function (p) {
+          return p.codigo.indexOf(texto) !== -1;
+        });
+      },
+      label: function (p) { return p.codigo + '  ' + p.nombre; },
+      onSelect: function (p) {
+        sku._input.value = p.codigo;
+        nombreProducto._input.value = p.nombre;
+      }
+    });
+
+    /* Fila 2: proveedor y código externo */
+    var proveedor = suggestField('Proveedor', 3, {
+      placeholder: 'Nombre del proveedor',
+      search: function (texto) {
+        var buscado = normalize(texto);
+        return PROVEEDORES.filter(function (nombre) {
+          return normalize(nombre).indexOf(buscado) !== -1;
+        });
+      },
+      label: function (nombre) { return nombre; },
+      onSelect: function (nombre) { proveedor._input.value = nombre; }
+    });
+
+    var codigoExterno = textField('Código externo', 3);
+
+    /* Fila 3: alcance, empaque y cantidad */
+    var alcance = selectField('Alcance', 2, ['- Selecciona un alcance -'].concat(ALCANCES));
+    var empaque = textField('Empaque', 2);
+    var cantidad = textField('Cantidad', 2);
+
+    var campos = [sku, nombreProducto, proveedor, codigoExterno, alcance, empaque, cantidad];
+    campos.forEach(function (campo) { body.appendChild(campo); });
 
     openModal({
       title: 'Agregar equivalencia',
@@ -620,9 +784,11 @@
       ]
     });
 
-    campos.forEach(function (field) {
-      if (field._initSelect) { field._initSelect(); }
+    campos.forEach(function (campo) {
+      if (campo._initSelect) { campo._initSelect(); }
     });
+
+    sku._input.focus();
   }
 
   /* ---------- Filtros superiores ---------- */
