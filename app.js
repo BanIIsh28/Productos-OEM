@@ -5,17 +5,6 @@
 
   var NAVY = 'rgb(0,75,131)';
 
-  var pageButtons = [
-    { label: '<', isBox: true, variant: 'light' },
-    { label: '1', isBox: true, variant: 'grey' },
-    { label: '2', isBox: true, variant: 'navy' },
-    { label: '3', isBox: true, variant: 'navy' },
-    { label: '4', isBox: true, variant: 'navy' },
-    { label: '...', isDots: true },
-    { label: '∞', isBox: true, variant: 'navy' },
-    { label: '>', isBox: true, variant: 'navy' }
-  ];
-
   var columns = [
     { label: 'Sucursal ID', sortable: true, numeric: true, minChars: 1 },
     { label: 'Nombre sucursal', sortable: true },
@@ -28,6 +17,7 @@
     { hasSearch: true }, { hasSearch: true }, { hasSearch: true }, { hasSearch: true }, { hasSearch: false }
   ];
 
+  /* Los seis registros del diseño original */
   var dataRows = [
     ['36', 'Ciudad Juárez La Raza', 'De la Raza 4159, Los Nogales. Juárez', 'Norte', 'CEDIS 1'],
     ['37', 'Tapachula', '17 A.C. OTE 14, Tapachula (Tapachula), Tapachula', 'Centro', 'CEDIS 1'],
@@ -36,6 +26,88 @@
     ['40', 'Guadalupe', 'Av. Benito Juárez 100, Nuevo San Sebastián, Guadalupe', 'Jalisco', 'CEDIS 2'],
     ['42', 'Tijuana Centro', 'Agua Caliente 9944, Revolución, Tijuana', 'México', 'CEDIS 2']
   ];
+
+  /* Registros de ejemplo adicionales, para que la paginación tenga
+     suficientes páginas que recorrer */
+  (function generateSampleRows() {
+    var plazas = [
+      ['Aguascalientes Norte', 'Aguascalientes', 'Bajío'],
+      ['Campeche', 'Campeche', 'Sur'],
+      ['Cancún Bonampak', 'Cancún', 'Sur'],
+      ['Celaya', 'Celaya', 'Bajío'],
+      ['Chihuahua Industrial', 'Chihuahua', 'Norte'],
+      ['Colima', 'Colima', 'Jalisco'],
+      ['Cuautitlán', 'Cuautitlán Izcalli', 'México'],
+      ['Cuernavaca', 'Cuernavaca', 'Centro'],
+      ['Culiacán Obregón', 'Culiacán', 'Norte'],
+      ['Durango', 'Durango', 'Norte'],
+      ['Ecatepec', 'Ecatepec de Morelos', 'México'],
+      ['Ensenada', 'Ensenada', 'Norte'],
+      ['Guadalajara Central', 'Guadalajara', 'Jalisco'],
+      ['Hermosillo Kino', 'Hermosillo', 'Norte'],
+      ['Irapuato', 'Irapuato', 'Bajío'],
+      ['León Bajío', 'León', 'Bajío'],
+      ['Los Mochis', 'Los Mochis', 'Norte'],
+      ['Mazatlán', 'Mazatlán', 'Norte'],
+      ['Mérida Itzáes', 'Mérida', 'Sur'],
+      ['Mexicali', 'Mexicali', 'Norte'],
+      ['Monclova', 'Monclova', 'Norte'],
+      ['Monterrey Cumbres', 'Monterrey', 'Norte'],
+      ['Morelia', 'Morelia', 'Bajío'],
+      ['Naucalpan', 'Naucalpan de Juárez', 'México'],
+      ['Nuevo Laredo', 'Nuevo Laredo', 'Norte'],
+      ['Oaxaca', 'Oaxaca de Juárez', 'Sur'],
+      ['Pachuca', 'Pachuca de Soto', 'Centro'],
+      ['Puebla Angelópolis', 'Puebla', 'Centro'],
+      ['Querétaro Alameda', 'Querétaro', 'Bajío'],
+      ['Reynosa', 'Reynosa', 'Norte'],
+      ['Saltillo', 'Saltillo', 'Norte'],
+      ['San Luis Potosí', 'San Luis Potosí', 'Bajío'],
+      ['Tampico', 'Tampico', 'Centro'],
+      ['Tepic', 'Tepic', 'Jalisco'],
+      ['Texcoco', 'Texcoco', 'México'],
+      ['Toluca Centro', 'Toluca', 'México'],
+      ['Torreón Laguna', 'Torreón', 'Norte'],
+      ['Tuxtla Gutiérrez', 'Tuxtla Gutiérrez', 'Sur'],
+      ['Uruapan', 'Uruapan', 'Bajío'],
+      ['Veracruz Puerto', 'Veracruz', 'Centro'],
+      ['Villahermosa', 'Villahermosa', 'Sur'],
+      ['Xalapa', 'Xalapa', 'Centro'],
+      ['Zacatecas', 'Zacatecas', 'Bajío'],
+      ['Zapopan Patria', 'Zapopan', 'Jalisco']
+    ];
+
+    var vias = [
+      'Av. Insurgentes', 'Blvd. Constitución', 'Calz. Independencia', 'Av. Revolución',
+      'Blvd. Díaz Ordaz', 'Av. Hidalgo', 'Carretera Federal', 'Av. Tecnológico',
+      'Blvd. Las Torres', 'Av. Universidad'
+    ];
+
+    var colonias = [
+      'Centro', 'San Rafael', 'Industrial', 'Las Palmas', 'Del Valle',
+      'Jardines', 'La Merced', 'Santa Fe', 'El Roble', 'Lomas Verdes'
+    ];
+
+    var id = 43;
+
+    /* Cuatro bloques con distinto sufijo, suficientes para que la
+       paginación llegue a diez páginas con 20 registros por página */
+    ['', ' II', ' III', ' IV'].forEach(function (sufijo, bloque) {
+      plazas.forEach(function (plaza, i) {
+        var numero = 100 + ((i * 37 + bloque * 13) % 900);
+        var direccion = vias[(i + bloque) % vias.length] + ' ' + numero + ', ' +
+          colonias[(i + bloque * 3) % colonias.length] + ', ' + plaza[1];
+
+        dataRows.push([
+          String(id++),
+          plaza[0] + sufijo,
+          direccion,
+          plaza[2],
+          'CEDIS ' + (((i + bloque) % 3) + 1)
+        ]);
+      });
+    });
+  })();
 
   var SORT_SVG =
     '<svg width="7" height="11" viewBox="0 0 7 11" fill="rgb(255,255,255)">' +
@@ -61,20 +133,85 @@
 
   /* ---------- Paginación ---------- */
 
+  /* Números de página visibles a la vez, como en el diseño original */
+  var PAGE_WINDOW = 4;
+
+  var page = 1;
+  var pageSize = 20;
+
+  function totalPages() {
+    return Math.max(1, Math.ceil(filteredRows().length / pageSize));
+  }
+
+  /* Registros de la página actual */
+  function pageRows() {
+    var rows = filteredRows();
+    var start = (page - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+  }
+
+  function goToPage(target) {
+    var last = totalPages();
+    var next = Math.min(Math.max(target, 1), last);
+    if (next === page) { return; }
+    page = next;
+    renderPagination();
+    renderRows();
+  }
+
+  function pageButton(label, variant, title, onClick, disabled) {
+    var btn = el('button', 'page-btn page-btn--' + variant);
+    btn.type = 'button';
+    btn.textContent = label;
+    if (title) { btn.title = title; }
+
+    if (disabled) {
+      btn.disabled = true;
+      btn.classList.add('page-btn--off');
+    } else {
+      btn.addEventListener('click', onClick);
+    }
+    return btn;
+  }
+
   function renderPagination() {
     var host = document.getElementById('pagination');
-    pageButtons.forEach(function (pg) {
-      if (pg.isDots) {
-        var dots = el('span', 'page-dots');
-        dots.textContent = pg.label;
-        host.appendChild(dots);
-        return;
-      }
-      var btn = el('button', 'page-btn page-btn--' + pg.variant);
-      btn.type = 'button';
-      btn.textContent = pg.label;
-      host.appendChild(btn);
-    });
+    var last = totalPages();
+
+    /* La página actual puede quedar fuera de rango al filtrar */
+    if (page > last) { page = last; }
+
+    host.innerHTML = '';
+
+    host.appendChild(pageButton('<', 'light', 'Página anterior', function () {
+      goToPage(page - 1);
+    }, page === 1));
+
+    /* Ventana de números que siempre contiene la página actual */
+    var start = Math.min(Math.max(page - 1, 1), Math.max(last - PAGE_WINDOW + 1, 1));
+    var end = Math.min(start + PAGE_WINDOW - 1, last);
+
+    for (var n = start; n <= end; n++) {
+      (function (number) {
+        var active = number === page;
+        host.appendChild(pageButton(String(number), active ? 'grey' : 'navy',
+          'Página ' + number, function () { goToPage(number); }, false));
+      })(n);
+    }
+
+    /* Quedan páginas después de la ventana: puntos y salto a la última */
+    if (end < last) {
+      var dots = el('span', 'page-dots');
+      dots.textContent = '...';
+      host.appendChild(dots);
+
+      host.appendChild(pageButton('∞', 'navy', 'Ir a la última página (' + last + ')',
+        function () { goToPage(last); }, false));
+    }
+
+    host.appendChild(pageButton('>', 'navy', 'Página siguiente', function () {
+      goToPage(page + 1);
+    }, page === last));
   }
 
   /* ---------- Tabla ---------- */
@@ -127,7 +264,7 @@
       host.removeChild(node);
     });
 
-    var rows = filteredRows();
+    var rows = pageRows();
 
     if (rows.length === 0) {
       var empty = el('div', 'td-empty');
@@ -158,6 +295,8 @@
     if (value === '') {
       delete filters[index];
       input.classList.remove('th-search__input--invalid');
+      page = 1;
+      renderPagination();
       renderRows();
       return;
     }
@@ -169,6 +308,8 @@
 
     input.classList.remove('th-search__input--invalid');
     filters[index] = normalize(value);
+    page = 1;
+    renderPagination();
     renderRows();
   }
 
@@ -181,6 +322,8 @@
       sort.dir = 'asc';
     }
     updateSortIndicators();
+    page = 1;
+    renderPagination();
     renderRows();
   }
 
@@ -252,6 +395,8 @@
           input.classList.remove('th-search__input--invalid');
           if (input.value.trim() === '' && filters[index] !== undefined) {
             delete filters[index];
+            page = 1;
+            renderPagination();
             renderRows();
           }
         });
@@ -294,7 +439,7 @@
 
   /* Exporta lo que se está viendo: filtros y orden aplicados */
   function exportToExcel() {
-    var rows = filteredRows();
+    var rows = pageRows();
 
     if (rows.length === 0) {
       showToast('No hay registros que exportar con los filtros aplicados', 'warning');
@@ -341,7 +486,7 @@
 
   /* ---------- Selects interactivos ---------- */
 
-  function buildSelect(root, caretSvg) {
+  function buildSelect(root, caretSvg, onSelect) {
     var options = root.getAttribute('data-options').split('|');
     var selected = 0;
 
@@ -371,6 +516,7 @@
           child.setAttribute('aria-selected', String(i === selected));
         });
         close();
+        if (onSelect) { onSelect(option, index); }
       });
       menu.appendChild(item);
     });
@@ -405,7 +551,13 @@
   function renderSelects() {
     buildSelect(document.getElementById('selSucursal'), CARET_FILTER_SVG);
     buildSelect(document.getElementById('selRegion'), CARET_FILTER_SVG);
-    buildSelect(document.getElementById('selRows'), CARET_ROWS_SVG);
+    /* El número de registros por página redefine la paginación */
+    buildSelect(document.getElementById('selRows'), CARET_ROWS_SVG, function (option) {
+      pageSize = Number(option);
+      page = 1;
+      renderPagination();
+      renderRows();
+    });
 
     document.addEventListener('click', closeAll);
     document.addEventListener('keydown', function (event) {

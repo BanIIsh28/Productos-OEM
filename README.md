@@ -27,12 +27,19 @@ componentes e iconografía).
 - **Botones deshabilitados**: el gris `rgb(211, 211, 211)` está reservado para
   este estado (por ejemplo `Filtrar`), sin efecto hover.
 - **Filtrado por columna**: cada campo `Buscar` del encabezado filtra únicamente
-  su propia columna. El filtro se ejecuta al pulsar `Enter` y requiere un mínimo
+  su propia columna, buscando entre **todos** los registros y no solo entre los
+  visibles en la página actual. El filtro se ejecuta al pulsar `Enter` y requiere un mínimo
   de 3 caracteres —salvo en `Sucursal ID`, donde basta 1—; con menos, el campo se
   marca en rojo y no filtra. Los filtros
   de varias columnas se combinan, la comparación ignora mayúsculas y acentos, y
   vaciar un campo retira su filtro. Si ninguna fila coincide se muestra un aviso.
 
+- **Paginación**: el número de páginas se calcula con los registros que dejan
+  los filtros y el valor de `Registros por página` (20, 50 o 100). Se muestran
+  cuatro números a la vez en una ventana que sigue a la página actual; mientras
+  queden páginas más allá de esa ventana aparecen los puntos y el botón `∞`, que
+  salta a la última página. Las flechas `<` y `>` se deshabilitan en los
+  extremos. Filtrar u ordenar devuelve a la primera página.
 - **Ordenamiento por columna**: las flechas del encabezado ordenan la tabla al
   hacer clic sobre él. `Sucursal ID` usa orden numérico; `Nombre sucursal` y
   `Región`, orden alfabético. Cada clic alterna ascendente y descendente, y la

@@ -248,7 +248,8 @@ a:hover { color: rgb(0, 50, 90); }
 }
 
 .logout:hover span { color: rgb(0, 75, 131); }
-.logout:hover svg path { fill: rgb(0, 75, 131); }
+.logout:hover svg path,
+.logout:hover svg circle { fill: rgb(0, 75, 131); }
 
 /* ---------- Botones ---------- */
 
@@ -423,6 +424,13 @@ a:hover { color: rgb(0, 50, 90); }
 
 .page-btn--light { background: rgb(211, 211, 211); }
 .page-btn--light:hover { background: rgb(191, 191, 191); }
+
+/* Extremos de la paginación sin destino: mismo gris de deshabilitado */
+.page-btn--off,
+.page-btn--off:hover {
+  background: rgb(211, 211, 211);
+  cursor: not-allowed;
+}
 
 /* ---------- Tabla ---------- */
 
