@@ -2,7 +2,8 @@
 
    Se superponen a toda la vista sobre un fondo negro al 50% de opacidad
    y quedan centradas horizontalmente y algo por encima del centro
-   vertical. Se cierran con la X, con Escape o pulsando el fondo. */
+   vertical. Se cierran con la X o con Escape; pulsar el fondo no las
+   cierra, para no perder lo capturado por descuido. */
 
 (function (global) {
   'use strict';
@@ -84,11 +85,6 @@
     }
 
     overlay.appendChild(modal);
-
-    /* El fondo cierra; el contenido no */
-    overlay.addEventListener('mousedown', function (event) {
-      if (event.target === overlay) { close(); }
-    });
 
     function onKeydown(event) {
       if (event.key === 'Escape') {

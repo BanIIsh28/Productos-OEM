@@ -112,9 +112,16 @@ horizontalmente y algo por encima del centro vertical.
 
 La cabecera es azul con el título y una `X` de cierre; el cuerpo recibe el
 contenido que se le pase y el pie coloca los botones a la derecha, con las
-variantes `cancel` (rojo `#D9534F`) y `save` (verde `#60BA7C`). Se cierra con la
-`X`, con `Escape`, pulsando el fondo o con cualquiera de sus botones; devolver
-`false` desde el `onClick` de un botón la mantiene abierta.
+variantes `cancel` (rojo `#D9534F`) y `save` (verde `#60BA7C`), algo más bajos y
+con esquinas redondeadas —la única excepción a los botones rectos del módulo—.
+Se cierra con la `X`, con `Escape` o con cualquiera de sus botones; pulsar el
+fondo no la cierra, para no perder lo capturado por descuido. Devolver `false`
+desde el `onClick` de un botón la mantiene abierta.
+
+Los campos comparten la altura de los desplegables de los filtros (28 px) y el
+texto va a 12 px, salvo el título de la cabecera, a 14 px. El estilo del campo de
+solo lectura —el de `SKU`— queda reservado en `.field input[readonly]`, también
+disponible como clase `.input--readonly` para reutilizarlo en otros formularios.
 
 El botón `Agregar equivalencia +` abre una ventana de prueba con esta base.
 
