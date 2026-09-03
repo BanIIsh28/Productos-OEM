@@ -356,9 +356,11 @@ a:hover { color: rgb(0, 50, 90); }
 
 .select--rows.select--open .select__trigger svg { transform: matrix(1, 0, 0, -1, 0, 0); }
 
-.select--tipo { width: 110px; }
-.select--alcance { width: 145px; }
-.select--estatus { width: 110px; }
+/* Los tres filtros comparten ancho, calculado para que quepa la opción
+   más larga de cualquiera de ellos ("Presentación") */
+.select--tipo,
+.select--alcance,
+.select--estatus { width: 140px; }
 
 .select__menu {
   position: absolute;
@@ -624,7 +626,9 @@ a:hover { color: rgb(0, 50, 90); }
   .content { padding: 22px 20px 24px 16px; }
   .filters { flex-wrap: wrap; row-gap: 12px; }
   .pagination { margin-left: auto; }
-  .select--alcance { width: 125px; }
+  .select--tipo,
+  .select--alcance,
+  .select--estatus { width: 122px; }
 }
 
 @media (max-width: 1024px) {
