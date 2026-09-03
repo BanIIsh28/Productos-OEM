@@ -297,7 +297,7 @@
     var rows = filteredRows();
 
     if (rows.length === 0) {
-      notify('No hay registros que exportar con los filtros aplicados', 'warn');
+      showToast('No hay registros que exportar con los filtros aplicados', 'warning');
       return;
     }
 
@@ -310,8 +310,8 @@
       widths: SHEET_WIDTHS
     }), name);
 
-    notify('Se descargó ' + name + ' con ' + rows.length +
-      (rows.length === 1 ? ' registro' : ' registros'), 'ok');
+    showToast('Se descargó ' + name + ' con ' + rows.length +
+      (rows.length === 1 ? ' registro' : ' registros'), 'success');
   }
 
   /* Plantilla de carga: encabezados y una fila de ejemplo */
@@ -329,28 +329,7 @@
       widths: SHEET_WIDTHS
     }), name);
 
-    notify('Se descargó ' + name + ' con los encabezados y una fila de ejemplo', 'ok');
-  }
-
-  /* Aviso temporal en la esquina inferior derecha */
-  var noticeTimer = null;
-
-  function notify(message, kind) {
-    var notice = document.getElementById('notice');
-    if (!notice) {
-      notice = el('div', 'notice');
-      notice.id = 'notice';
-      notice.setAttribute('role', 'status');
-      document.body.appendChild(notice);
-    }
-
-    notice.textContent = message;
-    notice.className = 'notice notice--visible' + (kind ? ' notice--' + kind : '');
-
-    clearTimeout(noticeTimer);
-    noticeTimer = setTimeout(function () {
-      notice.className = 'notice';
-    }, 4000);
+    showToast('Se descargó ' + name + ' con los encabezados y una fila de ejemplo', 'success');
   }
 
   function bindExport() {

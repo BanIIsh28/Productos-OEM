@@ -12,6 +12,7 @@ componentes e iconografía).
 | `styles.css` | Estilos completos de la interfaz. |
 | `app.js` | Datos de la vista y comportamiento (paginación, tabla, filtros, orden, exportación y selects). |
 | `xlsx.js` | Generador de archivos `.xlsx` en el navegador, sin dependencias. |
+| `toast.js` | Mensajes toast del módulo (`showToast`). |
 | `assets/logo-apymsa.png` | Logotipo del encabezado del menú lateral. |
 
 ## Interacciones incluidas
@@ -41,12 +42,29 @@ componentes e iconografía).
 - **Exportar a Excel**: el botón `Exportar` descarga un archivo `.xlsx` real con
   los registros de la tabla, respetando los filtros y el orden aplicados. El
   encabezado se genera con el azul corporativo y los identificadores como valores
-  numéricos. Un aviso confirma el nombre del archivo y cuántos registros incluye.
+  numéricos. Un toast confirma el nombre del archivo y cuántos registros incluye.
 
 - **Descargar plantilla**: el botón `Descargar plantilla` descarga
   `Plantilla-Productos-OEM.xlsx`, un archivo con los mismos encabezados y una
   fila de ejemplo, pensado para llenar y volver a cargar con `Importar`. Es
   siempre idéntico, sin importar los filtros activos.
+
+## Mensajes toast
+
+`showToast(mensaje, tipo)` muestra un aviso emergente. Hay tres variantes según
+el resultado de la acción, todas con el color principal al 90% de opacidad:
+
+| Tipo | Color | Uso |
+| --- | --- | --- |
+| `error` | `#D9534F` rojo | la acción falló |
+| `success` | `#60BA7C` verde | la acción se completó |
+| `warning` | `#DAA125` ámbar | la acción requiere atención |
+
+Comparten contorno `#000000` de 2 px y texto `#FFFFFF` de 14 px. El ancho es
+fijo (320 px): un mensaje largo crece solo a lo alto. Entran deslizándose desde
+la esquina superior izquierda de la ventana hasta quedar a 50 px de los bordes
+superior e izquierdo, permanecen 4 segundos y regresan por el mismo camino hasta
+salir de la vista.
 
 ## Tipografía
 
