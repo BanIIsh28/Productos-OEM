@@ -53,8 +53,7 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
   su propia columna —solo `SKU`, `Proveedor` y `Código externo` lo llevan—,
   buscando entre **todos** los registros y no solo entre los visibles en la página
   actual. El filtro se ejecuta al pulsar `Enter` y requiere un mínimo de 3
-  caracteres —salvo en `SKU`, donde basta 1—; con menos, el campo se marca en rojo
-  y no filtra. Los filtros
+  caracteres; con menos, el campo se marca en rojo y no filtra. Los filtros
   de varias columnas se combinan, la comparación ignora mayúsculas y acentos, y
   vaciar un campo retira su filtro. Si ninguna fila coincide se muestra un aviso.
 

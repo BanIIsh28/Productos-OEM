@@ -11,7 +11,7 @@
      control  la celda contiene un control, no texto                   */
 
   var columns = [
-    { label: 'SKU', sortable: true, numeric: true, search: true, minChars: 1 },
+    { label: 'SKU', sortable: true, numeric: true, search: true },
     { label: 'Proveedor', sortable: true, search: true },
     { label: 'Tipo' },
     { label: 'Código externo', numeric: true, search: true },
