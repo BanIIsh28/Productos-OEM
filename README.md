@@ -15,6 +15,25 @@ componentes e iconografía).
 | `toast.js` | Mensajes toast del módulo (`showToast`). |
 | `assets/logo-apymsa.png` | Logotipo del encabezado del menú lateral. |
 
+## Columnas
+
+| Columna | Contenido |
+| --- | --- |
+| SKU | código de 7 dígitos |
+| Proveedor | nombre de distribuidor de autopartes |
+| Tipo | `GS1` o `No GS1` |
+| Código externo | código de 12 dígitos |
+| Alcance | `Producto` o `Presentación` |
+| Empaque | número de 1 a 20 |
+| Cantidad | número de 1 a 20 |
+| Estatus | interruptor circular que alterna activo e inactivo |
+| Acciones | botón ámbar con icono de lápiz y sugerencia `Editar` |
+
+Los 182 registros de ejemplo se generan al cargar la vista, con valores aleatorios
+dentro de esos rangos. Las cinco primeras columnas comparten ancho; las de un solo
+número y las de control son más angostas, y cualquier valor más largo que su
+columna continúa en el siguiente renglón.
+
 ## Interacciones incluidas
 
 - **Selects desplegables**: `Sucursal`, `Región` y `Registros por página` son

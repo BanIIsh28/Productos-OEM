@@ -445,14 +445,21 @@ a:hover { color: rgb(0, 50, 90); }
 
 .table {
   display: grid;
-  grid-template-columns: 1fr 1.8fr 3.85fr 1.55fr 1.6fr;
+  /* SKU, Proveedor, Tipo, Código externo y Alcance comparten ancho;
+     Empaque, Cantidad, Estatus y Acciones son más angostas */
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr))     /* SKU, Proveedor, Tipo, Código externo, Alcance */
+    minmax(0, 0.55fr)             /* Empaque */
+    minmax(0, 0.55fr)             /* Cantidad */
+    minmax(0, 0.5fr)              /* Estatus */
+    minmax(0, 0.5fr);             /* Acciones */
 }
 
 .th {
   position: sticky;
   top: 0;
   z-index: 3;
-  height: 38px;
+  min-height: 38px;
   background: rgb(0, 75, 131);
   box-shadow: 0 0 0 1px rgb(255, 255, 255);
   display: flex;
@@ -471,7 +478,7 @@ a:hover { color: rgb(0, 50, 90); }
 .th span {
   font-size: 12px;
   color: rgb(255, 255, 255);
-  white-space: nowrap;
+  text-align: center;
 }
 
 /* Encabezados que ordenan la tabla */
@@ -512,6 +519,8 @@ a:hover { color: rgb(0, 50, 90); }
   color: rgb(0, 0, 0);
 }
 
+.th-search input { min-width: 0; }
+
 .th-search input::placeholder { color: rgb(211, 211, 211); }
 .th-search input:focus { outline: 1px solid rgb(0, 60, 106); }
 
@@ -539,15 +548,19 @@ a:hover { color: rgb(0, 50, 90); }
 
 .td {
   display: flex;
-  padding: 12px 10px;
+  padding: 10px 8px;
   justify-content: center;
   align-items: center;
+  min-width: 0;
 }
 
 .td span {
   font-size: 12px;
   color: rgb(0, 0, 0);
   text-align: center;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .row--even { background: rgb(255, 255, 255); }
@@ -672,3 +685,56 @@ a:hover { color: rgb(0, 50, 90); }
 .toast--error { background: rgba(217, 83, 79, 0.9); }      /* #D9534F */
 .toast--success { background: rgba(96, 186, 124, 0.9); }   /* #60BA7C */
 .toast--warning { background: rgba(218, 161, 37, 0.9); }   /* #DAA125 */
+
+/* ---------- Interruptor de Estatus ---------- */
+
+.switch {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid rgb(0, 0, 0);
+  border-radius: 9px;
+  background: rgb(190, 190, 190);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.switch__knob {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgb(255, 255, 255);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease;
+}
+
+.switch--on { background: rgb(96, 186, 124); }
+.switch--on .switch__knob { transform: translateX(16px); }
+
+.switch:hover { filter: brightness(0.94); }
+.switch:focus-visible { outline: 2px solid rgb(0, 75, 131); outline-offset: 2px; }
+
+/* ---------- Botón de la columna Acciones ---------- */
+
+.icon-btn {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.icon-btn--amber { background: rgb(218, 161, 37); }
+.icon-btn--amber:hover { background: rgb(196, 142, 28); }
+.icon-btn--amber:active { background: rgb(174, 125, 22); }
+.icon-btn:focus-visible { outline: 2px solid rgb(0, 75, 131); outline-offset: 2px; }
