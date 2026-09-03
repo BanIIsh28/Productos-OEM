@@ -350,8 +350,6 @@ a:hover { color: rgb(0, 50, 90); }
 .select--alcance .select__trigger svg,
 .select--estatus .select__trigger svg { transform: matrix(1, 0, 0, -1, 0, 0); }
 
-.select__trigger svg { transition: transform 0.15s ease; }
-
 .select--tipo.select--open .select__trigger svg,
 .select--alcance.select--open .select__trigger svg,
 .select--estatus.select--open .select__trigger svg { transform: matrix(1, 0, 0, 1, 0, 0); }
