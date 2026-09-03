@@ -276,23 +276,8 @@
       '-' + pad(now.getHours()) + pad(now.getMinutes());
   }
 
-  /* Exporta lo que se está viendo: filtros y orden aplicados */
-  function exportToExcel(button) {
-    var rows = filteredRows();
-
-    if (rows.length === 0) {
-      notify('No hay registros que exportar con los filtros aplicados', 'warn');
-      return;
-    }
-
-    var blob = buildXlsx({
-      sheetName: 'Productos OEM',
-      headers: columns.map(function (col) { return col.label; }),
-      rows: rows,
-      widths: SHEET_WIDTHS
-    });
-
-    var name = 'Productos-OEM_' + timestamp() + '.xlsx';
+  /* Dispara la descarga de un Blob con el nombre indicado */
+  function download(blob, name) {
     var url = URL.createObjectURL(blob);
     var link = document.createElement('a');
     link.href = url;
@@ -301,9 +286,50 @@
     link.click();
     document.body.removeChild(link);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function headerLabels() {
+    return columns.map(function (col) { return col.label; });
+  }
+
+  /* Exporta lo que se está viendo: filtros y orden aplicados */
+  function exportToExcel() {
+    var rows = filteredRows();
+
+    if (rows.length === 0) {
+      notify('No hay registros que exportar con los filtros aplicados', 'warn');
+      return;
+    }
+
+    var name = 'Productos-OEM_' + timestamp() + '.xlsx';
+
+    download(buildXlsx({
+      sheetName: 'Productos OEM',
+      headers: headerLabels(),
+      rows: rows,
+      widths: SHEET_WIDTHS
+    }), name);
 
     notify('Se descargó ' + name + ' con ' + rows.length +
       (rows.length === 1 ? ' registro' : ' registros'), 'ok');
+  }
+
+  /* Plantilla de carga: encabezados y una fila de ejemplo */
+  var TEMPLATE_ROW = [
+    '99', 'Nombre de la sucursal', 'Calle y número, Colonia, Ciudad', 'Región', 'CEDIS 1'
+  ];
+
+  function downloadTemplate() {
+    var name = 'Plantilla-Productos-OEM.xlsx';
+
+    download(buildXlsx({
+      sheetName: 'Plantilla',
+      headers: headerLabels(),
+      rows: [TEMPLATE_ROW],
+      widths: SHEET_WIDTHS
+    }), name);
+
+    notify('Se descargó ' + name + ' con los encabezados y una fila de ejemplo', 'ok');
   }
 
   /* Aviso temporal en la esquina inferior derecha */
@@ -328,8 +354,10 @@
   }
 
   function bindExport() {
-    var button = document.getElementById('btnExportar');
-    button.addEventListener('click', function () { exportToExcel(button); });
+    document.getElementById('btnExportar')
+      .addEventListener('click', exportToExcel);
+    document.getElementById('btnPlantilla')
+      .addEventListener('click', downloadTemplate);
   }
 
   /* ---------- Selects interactivos ---------- */

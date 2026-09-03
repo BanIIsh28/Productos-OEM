@@ -43,6 +43,11 @@ componentes e iconografía).
   encabezado se genera con el azul corporativo y los identificadores como valores
   numéricos. Un aviso confirma el nombre del archivo y cuántos registros incluye.
 
+- **Descargar plantilla**: el botón `Descargar plantilla` descarga
+  `Plantilla-Productos-OEM.xlsx`, un archivo con los mismos encabezados y una
+  fila de ejemplo, pensado para llenar y volver a cargar con `Importar`. Es
+  siempre idéntico, sin importar los filtros activos.
+
 ## Tipografía
 
 Todos los textos usan 12 px, salvo el menú lateral (16 px, escalado según la
