@@ -5,23 +5,6 @@
 
   var NAVY = 'rgb(0,75,131)';
 
-  var menuItems = [
-    { label: 'Parámetros Surtido HH', arrow: true },
-    { label: 'Parámetros Almacén W', arrow: false },
-    { label: 'Parámetros Solicitudes Traspaso', arrow: false },
-    { label: 'Cambio Físico', arrow: true },
-    { label: 'Múltiplos de Surtido', arrow: false },
-    { label: 'Correos', arrow: false },
-    { label: 'Categorías Token', arrow: false },
-    { label: 'Solicitudes Token', arrow: false },
-    { label: 'Log de Stocks Fijos', arrow: false },
-    { label: 'Retail', arrow: false },
-    { label: 'Control de Inventarios', arrow: false },
-    { label: 'Envíos Paqueterías', arrow: true },
-    { label: 'Configurar Productos', arrow: false },
-    { label: 'Fecha Caducidad CS', arrow: false }
-  ];
-
   var pageButtons = [
     { label: '<', isBox: true, variant: 'light' },
     { label: '1', isBox: true, variant: 'grey' },
@@ -54,14 +37,6 @@
     ['42', 'Tijuana Centro', 'Agua Caliente 9944, Revolución, Tijuana', 'México', 'CEDIS 2']
   ];
 
-  var ARROW_SVG =
-    '<svg width="11" height="6" viewBox="0 0 11 6" fill="rgb(255,255,255)">' +
-    '<path d="M 0.55 6 L 10.451 6 C 10.551 6 10.649 5.98 10.735 5.942 C 10.82 5.904 10.89 5.85 10.937 5.785 ' +
-    'C 10.983 5.72 11.005 5.648 10.999 5.575 C 10.993 5.502 10.96 5.431 10.903 5.371 L 5.953 0.162 ' +
-    'C 5.748 -0.054 5.254 -0.054 5.048 0.162 L 0.098 5.371 C 0.041 5.431 0.007 5.502 0.001 5.575 ' +
-    'C -0.005 5.648 0.016 5.721 0.063 5.785 C 0.109 5.85 0.179 5.905 0.265 5.942 C 0.351 5.98 0.45 6 0.55 6 Z" ' +
-    'fill-rule="nonzero"></path></svg>';
-
   var SORT_SVG =
     '<svg width="7" height="11" viewBox="0 0 7 11" fill="rgb(255,255,255)">' +
     '<path d="M 3.5 0 L 6.531 4.5 L 0.469 4.5 L 3.5 0 Z" fill-rule="nonzero"></path>' +
@@ -82,20 +57,6 @@
     var node = document.createElement(tag);
     if (className) { node.className = className; }
     return node;
-  }
-
-  /* ---------- Menú lateral ---------- */
-
-  function renderMenu() {
-    var host = document.getElementById('menuItems');
-    menuItems.forEach(function (item) {
-      var row = el('div', 'nav-item');
-      var label = el('span');
-      label.textContent = item.label;
-      row.appendChild(label);
-      if (item.arrow) { row.insertAdjacentHTML('beforeend', ARROW_SVG); }
-      host.appendChild(row);
-    });
   }
 
   /* ---------- Paginación ---------- */
@@ -229,7 +190,6 @@
     });
   }
 
-  renderMenu();
   renderPagination();
   renderTable();
   renderSelects();
