@@ -26,9 +26,16 @@ componentes e iconografía).
   este estado (por ejemplo `Filtrar`), sin efecto hover.
 - **Filtrado por columna**: cada campo `Buscar` del encabezado filtra únicamente
   su propia columna. El filtro se ejecuta al pulsar `Enter` y requiere un mínimo
-  de 3 caracteres; con menos, el campo se marca en rojo y no filtra. Los filtros
+  de 3 caracteres —salvo en `Sucursal ID`, donde basta 1—; con menos, el campo se
+  marca en rojo y no filtra. Los filtros
   de varias columnas se combinan, la comparación ignora mayúsculas y acentos, y
   vaciar un campo retira su filtro. Si ninguna fila coincide se muestra un aviso.
+
+- **Ordenamiento por columna**: las flechas del encabezado ordenan la tabla al
+  hacer clic sobre él. `Sucursal ID` usa orden numérico; `Nombre sucursal` y
+  `Región`, orden alfabético. Cada clic alterna ascendente y descendente, y la
+  flecha del sentido activo se resalta. `Dirección` y `Centro asignado` no
+  ordenan.
 
 ## Tipografía
 

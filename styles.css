@@ -455,6 +455,20 @@ a:hover { color: rgb(0, 50, 90); }
   white-space: nowrap;
 }
 
+/* Encabezados que ordenan la tabla */
+.th--sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.th--sortable:hover { background: rgb(0, 60, 106); }
+.th--sortable:focus-visible { outline: 2px solid rgb(255, 255, 255); outline-offset: -3px; }
+
+/* La flecha del sentido activo se resalta atenuando la contraria */
+.th--asc .sort-desc,
+.th--desc .sort-asc { opacity: 0.3; }
+
 .th-search {
   background: rgb(0, 75, 131);
   box-shadow: 0 0 0 1px rgb(255, 255, 255);

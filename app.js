@@ -17,9 +17,9 @@
   ];
 
   var columns = [
-    { label: 'Sucursal ID', sortable: true },
+    { label: 'Sucursal ID', sortable: true, numeric: true, minChars: 1 },
     { label: 'Nombre sucursal', sortable: true },
-    { label: 'Dirección', sortable: true },
+    { label: 'Dirección', sortable: false },
     { label: 'Región', sortable: true },
     { label: 'Centro asignado', sortable: false }
   ];
@@ -39,8 +39,8 @@
 
   var SORT_SVG =
     '<svg width="7" height="11" viewBox="0 0 7 11" fill="rgb(255,255,255)">' +
-    '<path d="M 3.5 0 L 6.531 4.5 L 0.469 4.5 L 3.5 0 Z" fill-rule="nonzero"></path>' +
-    '<path d="M 3.5 11 L 6.531 6.5 L 0.469 6.5 L 3.5 11 Z" fill-rule="nonzero"></path></svg>';
+    '<path class="sort-asc" d="M 3.5 0 L 6.531 4.5 L 0.469 4.5 L 3.5 0 Z" fill-rule="nonzero"></path>' +
+    '<path class="sort-desc" d="M 3.5 11 L 6.531 6.5 L 0.469 6.5 L 3.5 11 Z" fill-rule="nonzero"></path></svg>';
 
   var CARET_FILTER_SVG =
     '<svg width="13" height="8" viewBox="0 0 13.301 7.657">' +
@@ -81,6 +81,13 @@
 
   var MIN_CHARS = 3;
 
+  /* Columna y sentido del ordenamiento activo */
+  var sort = { index: null, dir: 'asc' };
+
+  function minCharsFor(index) {
+    return columns[index].minChars || MIN_CHARS;
+  }
+
   /* Filtro activo por índice de columna: { 0: "juarez", 3: "norte" } */
   var filters = {};
 
@@ -94,11 +101,22 @@
 
   function filteredRows() {
     var active = Object.keys(filters);
-    if (active.length === 0) { return dataRows; }
-    return dataRows.filter(function (cells) {
+    var rows = active.length === 0 ? dataRows.slice() : dataRows.filter(function (cells) {
       return active.every(function (index) {
         return normalize(cells[index]).indexOf(filters[index]) !== -1;
       });
+    });
+
+    if (sort.index === null) { return rows; }
+
+    var index = sort.index;
+    var factor = sort.dir === 'asc' ? 1 : -1;
+
+    return rows.sort(function (a, b) {
+      if (columns[index].numeric) {
+        return (Number(a[index]) - Number(b[index])) * factor;
+      }
+      return a[index].localeCompare(b[index], 'es', { sensitivity: 'base' }) * factor;
     });
   }
 
@@ -144,7 +162,7 @@
       return;
     }
 
-    if (value.length < MIN_CHARS) {
+    if (value.length < minCharsFor(index)) {
       input.classList.add('th-search__input--invalid');
       return;
     }
@@ -154,16 +172,60 @@
     renderRows();
   }
 
+  /* Alterna ascendente/descendente sobre la columna indicada */
+  function toggleSort(index) {
+    if (sort.index === index) {
+      sort.dir = sort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sort.index = index;
+      sort.dir = 'asc';
+    }
+    updateSortIndicators();
+    renderRows();
+  }
+
+  function updateSortIndicators() {
+    var headers = document.querySelectorAll('#table .th');
+    Array.prototype.forEach.call(headers, function (th, index) {
+      th.classList.remove('th--asc', 'th--desc');
+      if (!th.classList.contains('th--sortable')) { return; }
+      if (sort.index === index) {
+        th.classList.add(sort.dir === 'asc' ? 'th--asc' : 'th--desc');
+        th.setAttribute('aria-sort', sort.dir === 'asc' ? 'ascending' : 'descending');
+      } else {
+        th.setAttribute('aria-sort', 'none');
+      }
+    });
+  }
+
   function renderTable() {
     var host = document.getElementById('table');
 
-    columns.forEach(function (col) {
+    columns.forEach(function (col, index) {
       var th = el('div', 'th');
       var inner = el('div', 'th__inner');
       var label = el('span');
       label.textContent = col.label;
       inner.appendChild(label);
-      if (col.sortable) { inner.insertAdjacentHTML('beforeend', SORT_SVG); }
+
+      if (col.sortable) {
+        inner.insertAdjacentHTML('beforeend', SORT_SVG);
+        th.classList.add('th--sortable');
+        th.tabIndex = 0;
+        th.setAttribute('role', 'button');
+        th.setAttribute('aria-sort', 'none');
+        th.title = 'Ordenar por ' + col.label +
+          (col.numeric ? ' (orden numérico)' : ' (orden alfabético)');
+
+        th.addEventListener('click', function () { toggleSort(index); });
+        th.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleSort(index);
+          }
+        });
+      }
+
       th.appendChild(inner);
       host.appendChild(th);
     });
