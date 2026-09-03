@@ -13,6 +13,7 @@ componentes e iconografía).
 | `app.js` | Datos de la vista y comportamiento (paginación, tabla, filtros, orden, exportación y selects). |
 | `xlsx.js` | Generador de archivos `.xlsx` en el navegador, sin dependencias. |
 | `toast.js` | Mensajes toast del módulo (`showToast`). |
+| `modal.js` | Ventanas modales del módulo (`openModal`). |
 | `assets/logo-apymsa.png` | Logotipo del encabezado del menú lateral. |
 
 ## Columnas
@@ -102,6 +103,20 @@ La vista no se desplaza: el título, la botonera, los filtros, la paginación, l
 encabezados de columna con sus campos de búsqueda y el pie con `Registros por
 página` permanecen fijos. Solo se desplazan las filas de la tabla, dentro de su
 propio contenedor.
+
+## Ventanas modales
+
+`openModal({ title, body, buttons, onClose })` abre una ventana superpuesta a
+toda la vista, sobre un fondo `#000000` al 50% de opacidad, centrada
+horizontalmente y algo por encima del centro vertical.
+
+La cabecera es azul con el título y una `X` de cierre; el cuerpo recibe el
+contenido que se le pase y el pie coloca los botones a la derecha, con las
+variantes `cancel` (rojo `#D9534F`) y `save` (verde `#60BA7C`). Se cierra con la
+`X`, con `Escape`, pulsando el fondo o con cualquiera de sus botones; devolver
+`false` desde el `onClick` de un botón la mantiene abierta.
+
+El botón `Agregar equivalencia +` abre una ventana de prueba con esta base.
 
 ## Tipografía
 

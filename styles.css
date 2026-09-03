@@ -346,14 +346,12 @@ a:hover { color: rgb(0, 50, 90); }
 
 .select__trigger:hover { background: rgb(246, 246, 246); }
 
-.select--tipo .select__trigger svg,
-.select--alcance .select__trigger svg,
-.select--estatus .select__trigger svg { transform: matrix(1, 0, 0, -1, 0, 0); }
+/* El triángulo se dibuja apuntando hacia arriba: se invierte cerrado */
+.select__trigger svg { transform: matrix(1, 0, 0, -1, 0, 0); }
+.select--open .select__trigger svg { transform: matrix(1, 0, 0, 1, 0, 0); }
 
-.select--tipo.select--open .select__trigger svg,
-.select--alcance.select--open .select__trigger svg,
-.select--estatus.select--open .select__trigger svg { transform: matrix(1, 0, 0, 1, 0, 0); }
-
+/* El de "Registros por página" usa otro icono, ya orientado hacia abajo */
+.select--rows .select__trigger svg { transform: none; }
 .select--rows.select--open .select__trigger svg { transform: matrix(1, 0, 0, -1, 0, 0); }
 
 /* Los tres filtros comparten ancho, calculado para que quepa la opción
@@ -757,3 +755,123 @@ a:hover { color: rgb(0, 50, 90); }
 .icon-btn--amber:hover { background: rgb(196, 142, 28); }
 .icon-btn--amber:active { background: rgb(174, 125, 22); }
 .icon-btn:focus-visible { outline: 2px solid rgb(0, 75, 131); outline-offset: 2px; }
+
+/* ---------- Ventanas modales ---------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);   /* #000000 al 50% */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* El pie mayor que la cabecera deja la ventana algo por encima del centro */
+  padding: 24px 24px 12vh;
+  z-index: 300;
+}
+
+.modal {
+  width: min(720px, 100%);
+  max-height: 82vh;
+  background: rgb(255, 255, 255);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal:focus { outline: none; }
+
+.modal__header {
+  background: rgb(0, 75, 131);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  flex-shrink: 0;
+}
+
+.modal__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgb(255, 255, 255);
+}
+
+.modal__close {
+  display: flex;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: opacity 0.15s ease;
+}
+
+.modal__close:hover { opacity: 1; }
+.modal__close:focus-visible { outline: 2px solid rgb(255, 255, 255); outline-offset: 2px; }
+
+.modal__body {
+  padding: 24px 20px;
+  overflow-y: auto;
+}
+
+.modal__footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 0 20px 20px;
+  flex-shrink: 0;
+}
+
+/* Botones propios de las ventanas modales */
+.btn--cancel { background: rgb(217, 83, 79); }        /* #D9534F */
+.btn--cancel:hover { background: rgb(196, 68, 64); }
+.btn--cancel:active { background: rgb(175, 58, 55); }
+
+.btn--save { background: rgb(96, 186, 124); }         /* #60BA7C */
+.btn--save:hover { background: rgb(80, 166, 106); }
+.btn--save:active { background: rgb(66, 146, 90); }
+
+/* ---------- Campos de formulario dentro de las modales ---------- */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 30px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field > label {
+  font-size: 12px;
+  color: rgb(0, 0, 0);
+}
+
+.field input {
+  height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgb(190, 190, 190);
+  background: rgb(255, 255, 255);
+  font-family: inherit;
+  font-size: 12px;
+  color: rgb(0, 0, 0);
+}
+
+.field input:focus { outline: 1px solid rgb(0, 75, 131); }
+
+/* Campo de solo lectura */
+.field input[readonly] {
+  background: rgb(238, 238, 238);
+  color: rgb(60, 60, 60);
+}
+
+.field input[readonly]:focus { outline: none; }
+
+.field .select { width: 100%; }
+.field .select__trigger { padding: 8px 10px; }

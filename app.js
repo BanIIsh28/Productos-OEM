@@ -559,6 +559,72 @@
       .addEventListener('click', downloadTemplate);
   }
 
+  /* ---------- Ventana de equivalencia ---------- */
+
+  /* Campo de texto de solo lectura */
+  function readonlyField(label, value) {
+    var field = el('div', 'field');
+
+    var caption = el('label');
+    caption.textContent = label;
+
+    var input = el('input');
+    input.type = 'text';
+    input.value = value;
+    input.readOnly = true;
+
+    field.appendChild(caption);
+    field.appendChild(input);
+    return field;
+  }
+
+  /* Campo con el desplegable propio del módulo */
+  function selectField(label, options) {
+    var field = el('div', 'field');
+
+    var caption = el('label');
+    caption.textContent = label;
+
+    var select = el('div', 'select');
+    select.setAttribute('data-options', options.join('|'));
+
+    field.appendChild(caption);
+    field.appendChild(select);
+
+    /* El desplegable se construye una vez insertado en el documento */
+    field._initSelect = function () { buildSelect(select, CARET_FILTER_SVG); };
+    return field;
+  }
+
+  /* Ventana base, por ahora sin efecto sobre los datos */
+  function openEquivalenceModal() {
+    var body = el('div', 'form-grid');
+
+    var campos = [
+      readonlyField('SKU', ''),
+      readonlyField('Proveedor', ''),
+      selectField('Tipo', TIPOS),
+      selectField('Alcance', ALCANCES),
+      readonlyField('Código externo', ''),
+      selectField('Estatus', ['Activo', 'Inactivo'])
+    ];
+
+    campos.forEach(function (field) { body.appendChild(field); });
+
+    openModal({
+      title: 'Agregar equivalencia',
+      body: body,
+      buttons: [
+        { label: 'Cancelar', variant: 'cancel' },
+        { label: 'Guardar', variant: 'save' }
+      ]
+    });
+
+    campos.forEach(function (field) {
+      if (field._initSelect) { field._initSelect(); }
+    });
+  }
+
   /* ---------- Filtros superiores ---------- */
 
   function updateFilterButton() {
@@ -587,6 +653,8 @@
   function bindFilters() {
     document.getElementById('btnFiltrar')
       .addEventListener('click', applyTopFilters);
+    document.getElementById('btnEquivalencia')
+      .addEventListener('click', openEquivalenceModal);
   }
 
   /* ---------- Selects interactivos ---------- */
