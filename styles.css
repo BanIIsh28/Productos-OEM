@@ -478,6 +478,28 @@ a:hover { color: rgb(0, 50, 90); }
 .th-search input::placeholder { color: rgb(211, 211, 211); }
 .th-search input:focus { outline: 1px solid rgb(0, 60, 106); }
 
+/* Menos caracteres de los exigidos para filtrar */
+.th-search__input--invalid,
+.th-search__input--invalid:focus {
+  outline: 2px solid rgb(200, 70, 70);
+  background: rgb(253, 240, 240);
+}
+
+/* Sin coincidencias */
+.td-empty {
+  grid-column: 1 / -1;
+  background: rgb(255, 255, 255);
+  display: flex;
+  padding: 24px 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.td-empty span {
+  font-size: 12px;
+  color: rgb(120, 120, 120);
+}
+
 .td {
   display: flex;
   padding: 12px 10px;

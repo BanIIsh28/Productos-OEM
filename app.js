@@ -79,6 +79,81 @@
 
   /* ---------- Tabla ---------- */
 
+  var MIN_CHARS = 3;
+
+  /* Filtro activo por índice de columna: { 0: "juarez", 3: "norte" } */
+  var filters = {};
+
+  /* Normaliza para comparar sin distinguir mayúsculas ni acentos */
+  function normalize(text) {
+    return String(text)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function filteredRows() {
+    var active = Object.keys(filters);
+    if (active.length === 0) { return dataRows; }
+    return dataRows.filter(function (cells) {
+      return active.every(function (index) {
+        return normalize(cells[index]).indexOf(filters[index]) !== -1;
+      });
+    });
+  }
+
+  function renderRows() {
+    var host = document.getElementById('table');
+
+    Array.prototype.forEach.call(host.querySelectorAll('.td, .td-empty'), function (node) {
+      host.removeChild(node);
+    });
+
+    var rows = filteredRows();
+
+    if (rows.length === 0) {
+      var empty = el('div', 'td-empty');
+      var text = el('span');
+      text.textContent = 'No se encontraron registros con los filtros aplicados';
+      empty.appendChild(text);
+      host.appendChild(empty);
+      return;
+    }
+
+    rows.forEach(function (cells, i) {
+      var rowClass = i % 2 === 0 ? 'row--even' : 'row--odd';
+      cells.forEach(function (value) {
+        var td = el('div', 'td ' + rowClass);
+        var span = el('span');
+        span.textContent = value;
+        td.appendChild(span);
+        host.appendChild(td);
+      });
+    });
+  }
+
+  /* Aplica el filtro de una columna: se ejecuta con Enter y exige
+     un mínimo de caracteres; el campo vacío retira su filtro. */
+  function applyFilter(input, index) {
+    var value = input.value.trim();
+
+    if (value === '') {
+      delete filters[index];
+      input.classList.remove('th-search__input--invalid');
+      renderRows();
+      return;
+    }
+
+    if (value.length < MIN_CHARS) {
+      input.classList.add('th-search__input--invalid');
+      return;
+    }
+
+    input.classList.remove('th-search__input--invalid');
+    filters[index] = normalize(value);
+    renderRows();
+  }
+
   function renderTable() {
     var host = document.getElementById('table');
 
@@ -93,27 +168,38 @@
       host.appendChild(th);
     });
 
-    searchCells.forEach(function (cell) {
+    searchCells.forEach(function (cell, index) {
       var box = el('div', 'th-search');
       if (cell.hasSearch) {
         var input = el('input');
         input.type = 'text';
         input.placeholder = 'Buscar';
+        input.title = 'Escribe al menos ' + MIN_CHARS +
+          ' caracteres y pulsa Enter para filtrar por ' + columns[index].label;
+        input.setAttribute('aria-label', 'Filtrar por ' + columns[index].label);
+
+        input.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            applyFilter(input, index);
+          }
+        });
+
+        /* Al vaciar el campo se retira su filtro sin necesidad de Enter */
+        input.addEventListener('input', function () {
+          input.classList.remove('th-search__input--invalid');
+          if (input.value.trim() === '' && filters[index] !== undefined) {
+            delete filters[index];
+            renderRows();
+          }
+        });
+
         box.appendChild(input);
       }
       host.appendChild(box);
     });
 
-    dataRows.forEach(function (cells, i) {
-      var rowClass = i % 2 === 0 ? 'row--even' : 'row--odd';
-      cells.forEach(function (value) {
-        var td = el('div', 'td ' + rowClass);
-        var span = el('span');
-        span.textContent = value;
-        td.appendChild(span);
-        host.appendChild(td);
-      });
-    });
+    renderRows();
   }
 
   /* ---------- Selects interactivos ---------- */

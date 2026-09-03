@@ -24,7 +24,11 @@ componentes e iconografía).
   pasar el cursor, con un tono aún más oscuro al presionar.
 - **Botones deshabilitados**: el gris `rgb(211, 211, 211)` está reservado para
   este estado (por ejemplo `Filtrar`), sin efecto hover.
-- **Campos de búsqueda** en el encabezado de la tabla.
+- **Filtrado por columna**: cada campo `Buscar` del encabezado filtra únicamente
+  su propia columna. El filtro se ejecuta al pulsar `Enter` y requiere un mínimo
+  de 3 caracteres; con menos, el campo se marca en rojo y no filtra. Los filtros
+  de varias columnas se combinan, la comparación ignora mayúsculas y acentos, y
+  vaciar un campo retira su filtro. Si ninguna fila coincide se muestra un aviso.
 
 ## Tipografía
 
