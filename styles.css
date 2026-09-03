@@ -34,7 +34,7 @@ a:hover { color: rgb(0, 50, 90); }
   --footer-gap: 25px;
   --footer-pad: 30px;
   position: relative;
-  width: 240px;
+  width: 204px;
   height: 100%;
   background: rgb(47, 51, 55);
   display: flex;
@@ -188,7 +188,8 @@ a:hover { color: rgb(0, 50, 90); }
 
 .sidebar-footer {
   position: relative;
-  height: var(--footer-h);
+  height: auto;
+  min-height: var(--footer-h);
   flex-shrink: 0;
   background: rgb(47, 51, 55);
   display: flex;
@@ -526,7 +527,7 @@ a:hover { color: rgb(0, 50, 90); }
 }
 
 @media (max-width: 1280px) {
-  .sidebar { width: 204px; }
+  .sidebar { width: 173px; }
   .sidebar-logo img { width: 100%; height: auto; }
   .nav-item,
   .nav-item--sub,
@@ -541,7 +542,7 @@ a:hover { color: rgb(0, 50, 90); }
 }
 
 @media (max-width: 1024px) {
-  .sidebar { width: 190px; }
+  .sidebar { width: 162px; }
   .nav-item,
   .nav-item--sub,
   .nav-item--active { padding-left: 10px; padding-right: 10px; }
