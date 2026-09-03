@@ -37,9 +37,10 @@ componentes e iconografía).
 - **Paginación**: el número de páginas se calcula con los registros que dejan
   los filtros y el valor de `Registros por página` (20, 50 o 100). Se muestran
   cuatro números a la vez en una ventana que sigue a la página actual; mientras
-  queden páginas más allá de esa ventana aparecen los puntos y el botón `∞`, que
-  salta a la última página. Las flechas `<` y `>` se deshabilitan en los
-  extremos. Filtrar u ordenar devuelve a la primera página.
+  queden páginas más allá de esa ventana aparecen los puntos y el número de la
+  última página, que lleva directamente a ella. El botón de la página actual y
+  las flechas `<` y `>` sin destino quedan deshabilitados. Filtrar u ordenar
+  devuelve a la primera página.
 - **Ordenamiento por columna**: las flechas del encabezado ordenan la tabla al
   hacer clic sobre él. `Sucursal ID` usa orden numérico; `Nombre sucursal` y
   `Región`, orden alfabético. Cada clic alterna ascendente y descendente, y la
@@ -72,6 +73,13 @@ fijo (320 px): un mensaje largo crece solo a lo alto. Se sitúan a 50 px de los
 bordes superior e izquierdo, y entran deslizándose horizontalmente desde fuera
 del borde izquierdo —siempre a esa misma altura—, permanecen 4 segundos y
 regresan por el mismo camino hasta salir de la vista.
+
+## Desplazamiento
+
+La vista no se desplaza: el título, la botonera, los filtros, la paginación, los
+encabezados de columna con sus campos de búsqueda y el pie con `Registros por
+página` permanecen fijos. Solo se desplazan las filas de la tabla, dentro de su
+propio contenedor.
 
 ## Tipografía
 

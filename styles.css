@@ -217,8 +217,7 @@ a:hover { color: rgb(0, 50, 90); }
   display: flex;
   flex-direction: column;
   padding: 35px 40px 40px 22px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .content-header {
@@ -419,8 +418,8 @@ a:hover { color: rgb(0, 50, 90); }
 .page-btn--navy { background: rgb(0, 75, 131); }
 .page-btn--navy:hover { background: rgb(0, 60, 106); }
 
-.page-btn--grey { background: rgb(150, 150, 150); }
-.page-btn--grey:hover { background: rgb(130, 130, 130); }
+.page-btn--grey,
+.page-btn--grey:hover { background: rgb(150, 150, 150); cursor: default; }
 
 .page-btn--light { background: rgb(211, 211, 211); }
 .page-btn--light:hover { background: rgb(191, 191, 191); }
@@ -434,7 +433,14 @@ a:hover { color: rgb(0, 50, 90); }
 
 /* ---------- Tabla ---------- */
 
-.table-wrapper { margin-top: 20px; }
+.table-wrapper {
+  margin-top: 20px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
 
 .table {
   display: grid;
@@ -442,6 +448,10 @@ a:hover { color: rgb(0, 50, 90); }
 }
 
 .th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 38px;
   background: rgb(0, 75, 131);
   box-shadow: 0 0 0 1px rgb(255, 255, 255);
   display: flex;
@@ -478,6 +488,10 @@ a:hover { color: rgb(0, 50, 90); }
 .th--desc .sort-asc { opacity: 0.3; }
 
 .th-search {
+  position: sticky;
+  top: 38px;          /* justo debajo de la fila de encabezados */
+  z-index: 2;
+  height: 30px;
   background: rgb(0, 75, 131);
   box-shadow: 0 0 0 1px rgb(255, 255, 255);
   display: flex;
@@ -541,8 +555,8 @@ a:hover { color: rgb(0, 50, 90); }
 /* ---------- Pie: registros por página ---------- */
 
 .footer-bar {
-  margin-top: auto;
-  padding-top: 30px;
+  flex-shrink: 0;
+  padding-top: 20px;
   display: flex;
   align-items: center;
   gap: 9px;

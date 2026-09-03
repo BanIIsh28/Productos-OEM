@@ -167,7 +167,8 @@
 
     if (disabled) {
       btn.disabled = true;
-      btn.classList.add('page-btn--off');
+      /* La página actual conserva su gris; los extremos usan el de deshabilitado */
+      if (variant !== 'grey') { btn.classList.add('page-btn--off'); }
     } else {
       btn.addEventListener('click', onClick);
     }
@@ -183,7 +184,7 @@
 
     host.innerHTML = '';
 
-    host.appendChild(pageButton('<', 'light', 'Página anterior', function () {
+    host.appendChild(pageButton('<', page === 1 ? 'light' : 'navy', 'Página anterior', function () {
       goToPage(page - 1);
     }, page === 1));
 
@@ -195,7 +196,8 @@
       (function (number) {
         var active = number === page;
         host.appendChild(pageButton(String(number), active ? 'grey' : 'navy',
-          'Página ' + number, function () { goToPage(number); }, false));
+          active ? 'Página actual' : 'Página ' + number,
+          function () { goToPage(number); }, active));
       })(n);
     }
 
@@ -205,7 +207,7 @@
       dots.textContent = '...';
       host.appendChild(dots);
 
-      host.appendChild(pageButton('∞', 'navy', 'Ir a la última página (' + last + ')',
+      host.appendChild(pageButton(String(last), 'navy', 'Ir a la última página',
         function () { goToPage(last); }, false));
     }
 
