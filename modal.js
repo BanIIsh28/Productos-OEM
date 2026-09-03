@@ -9,7 +9,7 @@
   'use strict';
 
   var CLOSE_SVG =
-    '<svg width="16" height="16" viewBox="0 0 16 16" fill="rgb(255,255,255)" aria-hidden="true">' +
+    '<svg width="13" height="13" viewBox="0 0 16 16" fill="rgb(255,255,255)" aria-hidden="true">' +
     '<path d="M1.6 0.2 L8 6.6 L14.4 0.2 L15.8 1.6 L9.4 8 L15.8 14.4 L14.4 15.8 L8 9.4 ' +
     'L1.6 15.8 L0.2 14.4 L6.6 8 L0.2 1.6 Z"></path></svg>';
 

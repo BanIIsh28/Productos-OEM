@@ -766,7 +766,7 @@ a:hover { color: rgb(0, 50, 90); }
   justify-content: center;
   align-items: center;
   /* El pie mayor que la cabecera deja la ventana por encima del centro */
-  padding: 24px 24px calc(12vh + 30px);
+  padding: 24px 24px calc(12vh + 130px);
   z-index: 300;
 }
 
@@ -828,7 +828,7 @@ a:hover { color: rgb(0, 50, 90); }
    redondeadas, a diferencia de los rectos del resto del módulo */
 .btn--cancel,
 .btn--save {
-  padding: 7px 22px;
+  padding: 7px 16px;
   border-radius: 4px;
 }
 
@@ -845,7 +845,7 @@ a:hover { color: rgb(0, 50, 90); }
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px 30px;
+  gap: 12px 30px;
 }
 
 .field {
