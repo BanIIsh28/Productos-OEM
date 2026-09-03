@@ -61,10 +61,10 @@ el resultado de la acción, todas con el color principal al 90% de opacidad:
 | `warning` | `#DAA125` ámbar | la acción requiere atención |
 
 Comparten contorno `#000000` de 2 px y texto `#FFFFFF` de 14 px. El ancho es
-fijo (320 px): un mensaje largo crece solo a lo alto. Entran deslizándose desde
-la esquina superior izquierda de la ventana hasta quedar a 50 px de los bordes
-superior e izquierdo, permanecen 4 segundos y regresan por el mismo camino hasta
-salir de la vista.
+fijo (320 px): un mensaje largo crece solo a lo alto. Se sitúan a 50 px de los
+bordes superior e izquierdo, y entran deslizándose horizontalmente desde fuera
+del borde izquierdo —siempre a esa misma altura—, permanecen 4 segundos y
+regresan por el mismo camino hasta salir de la vista.
 
 ## Tipografía
 

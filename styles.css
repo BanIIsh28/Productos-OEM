@@ -634,14 +634,15 @@ a:hover { color: rgb(0, 50, 90); }
   overflow-wrap: break-word;
   z-index: 200;
 
-  /* Fuera de la vista, por la esquina superior izquierda de la ventana */
-  transform: translate(calc(-100% - 50px), calc(-100% - 50px));
+  /* Fuera de la vista por el borde izquierdo, a su misma altura:
+     el desplazamiento es solo horizontal */
+  transform: translateX(calc(-100% - 50px));
   transition: transform 0.45s ease;
   pointer-events: none;
 }
 
 .toast--visible {
-  transform: translate(0, 0);
+  transform: translateX(0);
 }
 
 /* Colores principales al 90% de opacidad */
