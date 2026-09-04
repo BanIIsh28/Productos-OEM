@@ -127,6 +127,18 @@ texto va a 12 px, salvo el título de la cabecera, a 14 px. El estilo del campo 
 solo lectura —el de `SKU`— queda reservado en `.field input[readonly]`, también
 disponible como clase `.input--readonly` para reutilizarlo en otros formularios.
 
+### Ventana de confirmación
+
+`confirmModal({ title, message, accept, onAccept })` abre una ventana de solo
+texto, con la misma línea y las mismas dimensiones que el formulario, para una
+pregunta o un aviso. Lleva los botones `Cancelar` y `Aceptar`, y solo este último
+ejecuta la acción.
+
+El interruptor de la columna `Estatus` la usa: antes de aplicar el cambio pregunta
+si de verdad se quiere activar o desactivar el estatus de esa equivalencia,
+nombrando su SKU. Cancelar, cerrar con la `X` o pulsar `Escape` deja el estatus
+como estaba.
+
 ### Formulario de equivalencia
 
 La misma ventana sirve para dar de alta una equivalencia, desde

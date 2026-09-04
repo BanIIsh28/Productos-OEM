@@ -991,3 +991,18 @@ a:hover { color: rgb(0, 50, 90); }
   background: rgb(149, 209, 149);   /* #95D195 */
   cursor: not-allowed;
 }
+
+/* ---------- Ventana de solo texto ---------- */
+
+.modal-message {
+  /* Reserva el mismo aire que un formulario, para que las ventanas
+     de pregunta guarden las proporciones del resto */
+  min-height: 120px;
+}
+
+.modal-message__text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgb(0, 0, 0);
+}

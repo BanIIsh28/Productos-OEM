@@ -344,8 +344,17 @@
     }
 
     btn.addEventListener('click', function () {
-      row[COL_ESTATUS] = !row[COL_ESTATUS];
-      paint();
+      var activar = !row[COL_ESTATUS];
+
+      confirmModal({
+        title: activar ? 'Activar estatus' : 'Desactivar estatus',
+        message: '¿Deseas ' + (activar ? 'activar' : 'desactivar') +
+          ' el estatus de la equivalencia del SKU ' + row[COL_SKU] + '?',
+        onAccept: function () {
+          row[COL_ESTATUS] = activar;
+          paint();
+        }
+      });
     });
 
     paint();
@@ -615,6 +624,34 @@
       .addEventListener('click', exportToExcel);
     document.getElementById('btnPlantilla')
       .addEventListener('click', downloadTemplate);
+  }
+
+  /* ---------- Ventana de confirmación ---------- */
+
+  /**
+   * Ventana de texto: una pregunta o un aviso, con los mismos
+   * márgenes y dimensiones que el formulario.
+   * @param {Object} options - { title, message, accept, onAccept }
+   */
+  function confirmModal(options) {
+    var body = el('div', 'modal-message');
+
+    var text = el('p', 'modal-message__text');
+    text.textContent = options.message;
+    body.appendChild(text);
+
+    openModal({
+      title: options.title,
+      body: body,
+      buttons: [
+        { label: 'Cancelar', variant: 'cancel' },
+        {
+          label: options.accept || 'Aceptar',
+          variant: 'save',
+          onClick: options.onAccept
+        }
+      ]
+    });
   }
 
   /* ---------- Ventana de equivalencia ---------- */
