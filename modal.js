@@ -27,6 +27,8 @@
    *   title   {string}  texto de la cabecera
    *   body    {Node}    contenido del cuerpo
    *   wide    {boolean} ventana ancha, para contenido tabular
+   *   xwide   {boolean} ventana extra ancha, para contenido tabular
+   *                     de muchas columnas
    *   note    {string}  leyenda que acompaña a los botones del pie,
    *                     alineada a la izquierda de estos
    *   buttons {Array}   [{ label, variant, onClick }]; 'variant' es
@@ -42,7 +44,9 @@
 
     var overlay = el('div', 'modal-overlay');
 
-    var modal = el('div', 'modal' + (options.wide ? ' modal--wide' : ''));
+    var modal = el('div', 'modal' +
+      (options.wide ? ' modal--wide' : '') +
+      (options.xwide ? ' modal--xwide' : ''));
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
     modal.tabIndex = -1;

@@ -10,7 +10,7 @@ componentes e iconografía).
 | --- | --- |
 | `index.html` | Estructura del módulo: menú lateral, encabezado, acciones, filtros, tabla y pie. |
 | `styles.css` | Estilos completos de la interfaz. |
-| `app.js` | Datos de la vista y comportamiento (paginación, tabla, filtros, orden, exportación y selects). |
+| `app.js` | Datos de la vista y comportamiento (paginación, tabla, filtros, orden, exportación, bitácora y selects). |
 | `xlsx.js` | Generador de archivos `.xlsx` en el navegador, sin dependencias. |
 | `xlsx-read.js` | Lector de archivos `.xlsx` en el navegador (`readXlsx`). |
 | `toast.js` | Mensajes toast del módulo (`showToast`). |
@@ -46,7 +46,8 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
   buscadores de columna.
 - **Selects desplegables**: se abren al hacer clic, marcan la opción seleccionada,
   y se cierran al elegir una opción, al hacer clic fuera o con `Esc`.
-- **Botones con hover**: `Exportar` e `Importar` (azul), `Descargar plantilla`
+- **Botones con hover**: `Exportar`, `Importar`, `Bitácora` y
+  `Agregar equivalencia +` (azul), `Descargar plantilla`
   (verde) y los botones de paginación oscurecen ligeramente su color base al
   pasar el cursor, con un tono aún más oscuro al presionar.
 - **Botones deshabilitados**: el gris `rgb(211, 211, 211)` está reservado para
@@ -214,6 +215,53 @@ advierte si los filtros activos la dejan fuera—. El `Tipo` se deduce del códi
 externo: se toma como `GS1` cuando su longitud es la de un GTIN (8, 12, 13 o 14
 dígitos) y como `No GS1` en cualquier otro caso. Los registros nuevos entran
 activos.
+
+### Bitácora de cambios
+
+El botón `Bitácora`, a la izquierda de `Agregar equivalencia +`, abre una ventana
+extra ancha (hasta 1340 px) con el historial completo del catálogo.
+
+**Ninguna acción ocurre sin dejar rastro.** Las tres funciones `commitAlta`,
+`commitEdicion` y `commitEstatus` son las únicas del módulo que modifican los
+registros, y cada una escribe su entrada en el mismo paso en que aplica el cambio.
+El rastro no depende de que quien las llame se acuerde de anotarlo: pasan por
+ellas el alta desde el formulario, el alta masiva de cada registro de un archivo
+importado, la edición desde el lápiz y el cambio de estatus desde el interruptor.
+
+Cada entrada guarda el **usuario** que hizo el cambio (un identificador de cinco
+dígitos como máximo), el **campo modificado**, el **valor anterior**, el **valor
+nuevo** y la **fecha y hora**. Según la acción:
+
+| Acción | Campo | Valor anterior | Valor nuevo |
+| --- | --- | --- | --- |
+| `Alta` | `Registro completo` | — | los ocho datos del registro |
+| `Edición` | el campo que cambió | su valor antes | su valor después |
+| `Baja` | `Estatus` | `Activo` | `Inactivo` |
+| `Reactivación` | `Estatus` | `Inactivo` | `Activo` |
+
+Una edición que toca tres campos deja tres entradas, una por campo. La acción se
+distingue por color: `Alta` en verde, `Edición` en ámbar, `Baja` en rojo y
+`Reactivación` en el azul del módulo.
+
+La vista se ordena de lo más reciente a lo más antiguo y se filtra por `Fecha y
+hora`, `Usuario`, `SKU` y `Proveedor`, con los mismos campos `Buscar` del
+encabezado que usa la tabla del catálogo: `Enter` para ejecutar, mínimo 3
+caracteres, vaciar el campo retira su filtro y la comparación ignora mayúsculas y
+acentos. **Los cuatro filtros se combinan entre sí**, de modo que un usuario y un
+SKU dejan solo los cambios de esa persona sobre ese registro. La fecha se busca
+sobre el texto `dd/mm/aaaa hh:mm`, así que `09/2026` acota un mes y `04/09` un día.
+Los filtros se conservan al cerrar y reabrir la ventana, para retomar la consulta.
+
+Encabezando la tabla, la misma fila de campos de solo lectura del resto de las
+ventanas: `Usuario en sesión`, `Entradas` (el total) y `Mostradas` (las que
+quedan tras los filtros). La tabla crece hasta el 42 % de la altura de la ventana
+y a partir de ahí se desplaza internamente con el encabezado fijo.
+
+El catálogo arranca con un historial previo verosímil —el alta de cada uno de los
+182 registros más algunas ediciones y cambios de estatus repartidos en los últimos
+meses, a nombre de distintos usuarios—, de modo que la vista tenga contenido desde
+el principio. El valor nuevo de la última entrada de cada campo coincide siempre
+con lo que la tabla muestra hoy.
 
 ## Tipografía
 

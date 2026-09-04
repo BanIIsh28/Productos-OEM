@@ -275,6 +275,14 @@ a:hover { color: rgb(0, 50, 90); }
 
 .btn--end { margin-left: auto; }
 
+/* Botones alineados al extremo derecho de la fila de acciones */
+.actions__end {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-left: auto;
+}
+
 .btn--filter {
   background: rgb(0, 113, 179);   /* #0071B3 */
   padding: 10px 20px;
@@ -522,7 +530,8 @@ a:hover { color: rgb(0, 50, 90); }
   align-items: center;
 }
 
-.th-search input {
+.th-search input,
+.log-search input {
   background: rgb(246, 246, 246);
   border: none;
   flex-grow: 1;
@@ -533,10 +542,14 @@ a:hover { color: rgb(0, 50, 90); }
   color: rgb(0, 0, 0);
 }
 
-.th-search input { min-width: 0; }
+.th-search input,
+.log-search input { min-width: 0; }
 
-.th-search input::placeholder { color: rgb(211, 211, 211); }
-.th-search input:focus { outline: 1px solid rgb(0, 60, 106); }
+.th-search input::placeholder,
+.log-search input::placeholder { color: rgb(211, 211, 211); }
+
+.th-search input:focus,
+.log-search input:focus { outline: 1px solid rgb(0, 60, 106); }
 
 /* Menos caracteres de los exigidos para filtrar */
 .th-search__input--invalid,
@@ -1042,6 +1055,9 @@ a:hover { color: rgb(0, 50, 90); }
 /* Ventana ancha, para el contenido tabular */
 .modal--wide { width: min(1100px, 100%); }
 
+/* Ventana extra ancha, para la bitácora: ocho columnas de datos */
+.modal--xwide { width: min(1340px, 100%); }
+
 .preview__summary {
   margin: 0 0 14px;
 }
@@ -1123,3 +1139,65 @@ a:hover { color: rgb(0, 50, 90); }
 /* Con el resumen sobre la tabla, la altura disponible para los
    registros se ajusta para que la ventana siga cabiendo en pantalla */
 .preview .preview-table { max-height: 40vh; }
+
+/* ---------- Bitácora de cambios ---------- */
+
+.log-table {
+  grid-template-columns:
+    minmax(0, 1.05fr)   /* Fecha y hora */
+    minmax(0, 0.6fr)    /* Usuario */
+    minmax(0, 0.7fr)    /* SKU */
+    minmax(0, 1.45fr)   /* Proveedor */
+    minmax(0, 0.85fr)   /* Acción */
+    minmax(0, 1fr)      /* Campo */
+    minmax(0, 1.6fr)    /* Valor anterior */
+    minmax(0, 2fr);     /* Valor nuevo */
+  max-height: 42vh;
+}
+
+/* Altura fija: la fila de búsqueda se ancla justo debajo */
+.log-table .preview-table__th {
+  min-height: 32px;
+  top: 0;
+}
+
+/* Fila de búsqueda por columna, como la de la tabla del catálogo */
+.log-search {
+  position: sticky;
+  top: 32px;
+  z-index: 2;
+  height: 28px;
+  background: rgb(0, 75, 131);
+  box-shadow: 0 0 0 1px rgb(255, 255, 255);
+  display: flex;
+  padding: 4px;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Los datos largos se leen mejor alineados a la izquierda */
+.log-cell--text {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+/* El valor que se dejó atrás, en un gris que no compite con el nuevo */
+.log-cell--old { color: rgb(110, 110, 110); }
+
+/* La acción, con el color que ya usa el módulo para cada resultado */
+.log-cell--alta { color: rgb(60, 130, 85); font-weight: 700; }
+.log-cell--edicion { color: rgb(150, 110, 20); font-weight: 700; }
+.log-cell--baja { color: rgb(160, 40, 40); font-weight: 700; }
+.log-cell--reactivacion { color: rgb(0, 75, 131); font-weight: 700; }
+
+/* Sin coincidencias */
+.log-empty {
+  grid-column: 1 / -1;
+  background: rgb(255, 255, 255);
+  display: flex;
+  padding: 24px 10px;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  color: rgb(90, 90, 90);
+}

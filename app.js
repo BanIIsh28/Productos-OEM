@@ -23,6 +23,7 @@
   ];
 
   var COL_SKU = 0;
+  var COL_PROVEEDOR = 1;
   var COL_TIPO = 2;
   var COL_ALCANCE = 4;
   var COL_ESTATUS = 7;
@@ -171,6 +172,116 @@
     if (className) { node.className = className; }
     return node;
   }
+
+  /* ---------- Bitácora de cambios ----------
+
+     Toda alta, edición, baja o reactivación de una equivalencia pasa
+     por commitAlta, commitEdicion o commitEstatus. Son las únicas
+     funciones del módulo que modifican los registros, así que ninguna
+     de esas acciones puede ocurrir sin dejar su entrada en el
+     historial: el rastro no depende de que quien llame se acuerde de
+     anotarlo. */
+
+  var CAMPOS = ['SKU', 'Proveedor', 'Tipo', 'Código externo', 'Alcance',
+                'Empaque', 'Cantidad', 'Estatus'];
+
+  /* Identificadores del personal de operaciones: cinco dígitos como máximo */
+  var USUARIOS = ['10345', '10412', '20877', '31056', '40923', '7218'];
+  var USUARIO_SESION = USUARIOS[0];
+
+  /* Entradas en orden cronológico; la vista las presenta al revés */
+  var historial = [];
+
+  function textoEstatus(activo) { return activo ? 'Activo' : 'Inactivo'; }
+
+  /* Los ocho datos del registro en una línea, para el alta */
+  function resumenRegistro(row) {
+    return CAMPOS.map(function (campo, i) {
+      return i === COL_ESTATUS ? textoEstatus(row[i]) : row[i];
+    }).join(' · ');
+  }
+
+  function anotar(row, accion, campo, anterior, nuevo, cuando, usuario) {
+    historial.push({
+      fecha: cuando || new Date(),
+      usuario: usuario || USUARIO_SESION,
+      sku: row[COL_SKU],
+      proveedor: row[COL_PROVEEDOR],
+      accion: accion,
+      campo: campo,
+      anterior: anterior,
+      nuevo: nuevo
+    });
+  }
+
+  /* Alta: el registro entra al catálogo y queda anotado */
+  function commitAlta(row, cuando, usuario) {
+    dataRows.unshift(row);
+    anotar(row, 'Alta', 'Registro completo', '', resumenRegistro(row), cuando, usuario);
+  }
+
+  /* Edición: una entrada por cada campo cuyo valor cambia.
+     Devuelve cuántos cambiaron. */
+  function commitEdicion(row, valores) {
+    var cambios = 0;
+
+    valores.forEach(function (nuevo, i) {
+      var anterior = row[i];
+      if (String(anterior) === String(nuevo)) { return; }
+
+      row[i] = nuevo;
+      anotar(row, 'Edición', CAMPOS[i], String(anterior), String(nuevo));
+      cambios++;
+    });
+
+    return cambios;
+  }
+
+  /* Baja o reactivación, según el estatus al que pasa el registro */
+  function commitEstatus(row, activo) {
+    var anterior = row[COL_ESTATUS];
+    row[COL_ESTATUS] = activo;
+    anotar(row, activo ? 'Reactivación' : 'Baja', 'Estatus',
+      textoEstatus(anterior), textoEstatus(activo));
+  }
+
+  /* Historial previo del catálogo: el alta de cada registro y algunos
+     cambios posteriores, repartidos en los últimos meses. El valor
+     nuevo de la última entrada de cada campo coincide con lo que la
+     tabla muestra hoy. */
+  (function seedHistorial() {
+    var DIA = 86400000;
+    var ahora = Date.now();
+
+    dataRows.forEach(function (row) {
+      var alta = ahora - randomInt(30, 150) * DIA - randomInt(0, DIA - 1);
+
+      anotar(row, 'Alta', 'Registro completo', '', resumenRegistro(row),
+        new Date(alta), pick(USUARIOS));
+
+      /* Uno de cada cuatro registros recibió después un ajuste de datos */
+      if (Math.random() < 0.25) {
+        var indice = pick([COL_PROVEEDOR, 3, 5, 6]);
+        var previo = indice === COL_PROVEEDOR ? pick(PROVEEDORES)
+          : indice === 3 ? randomCode(12)
+          : String(randomInt(1, 20));
+
+        if (String(previo) !== String(row[indice])) {
+          anotar(row, 'Edición', CAMPOS[indice], previo, String(row[indice]),
+            new Date(alta + randomInt(1, 20) * DIA), pick(USUARIOS));
+        }
+      }
+
+      /* Y uno de cada seis, un cambio de estatus que dejó el actual */
+      if (Math.random() < 0.17) {
+        anotar(row, row[COL_ESTATUS] ? 'Reactivación' : 'Baja', 'Estatus',
+          textoEstatus(!row[COL_ESTATUS]), textoEstatus(row[COL_ESTATUS]),
+          new Date(alta + randomInt(21, 28) * DIA), pick(USUARIOS));
+      }
+    });
+
+    historial.sort(function (a, b) { return a.fecha - b.fecha; });
+  })();
 
   /* ---------- Filtros y orden ---------- */
 
@@ -353,7 +464,7 @@
         message: '¿Deseas ' + (activar ? 'activar' : 'desactivar') +
           ' el estatus de la equivalencia del SKU ' + row[COL_SKU] + '?',
         onAccept: function () {
-          row[COL_ESTATUS] = activar;
+          commitEstatus(row, activar);
           paint();
         }
       });
@@ -859,8 +970,9 @@
       return [v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] === 'Activo'];
     });
 
-    /* Se insertan al principio, en el orden del archivo */
-    nuevos.slice().reverse().forEach(function (row) { dataRows.unshift(row); });
+    /* Se insertan al principio, en el orden del archivo; cada uno deja
+       su entrada en la bitácora */
+    nuevos.slice().reverse().forEach(function (row) { commitAlta(row); });
 
     sort.index = null;
     updateSortIndicators();
@@ -870,6 +982,176 @@
 
     showToast('Se cargaron ' + nuevos.length +
       (nuevos.length === 1 ? ' equivalencia' : ' equivalencias') + ' del archivo', 'success');
+  }
+
+  /* ---------- Ventana de la bitácora ----------
+
+     Consulta filtrable del historial. Los filtros son los mismos que
+     los de la tabla del catálogo —uno por columna, con Enter y un
+     mínimo de caracteres— y se combinan entre sí: un SKU y un usuario
+     dejan solo los cambios de ese usuario sobre ese SKU. */
+
+  var LOG_COLUMNAS = [
+    { label: 'Fecha y hora', key: 'fechaTexto', search: true, hint: 'dd/mm/aaaa hh:mm' },
+    { label: 'Usuario', key: 'usuario', search: true },
+    { label: 'SKU', key: 'sku', search: true },
+    { label: 'Proveedor', key: 'proveedor', search: true, text: true },
+    { label: 'Acción', key: 'accion' },
+    { label: 'Campo', key: 'campo' },
+    { label: 'Valor anterior', key: 'anterior', text: true },
+    { label: 'Valor nuevo', key: 'nuevo', text: true }
+  ];
+
+  /* Sobreviven al cierre de la ventana, para retomar la consulta */
+  var logFilters = {};
+
+  function dosDigitos(numero) { return (numero < 10 ? '0' : '') + numero; }
+
+  function fechaTexto(fecha) {
+    return dosDigitos(fecha.getDate()) + '/' + dosDigitos(fecha.getMonth() + 1) + '/' +
+      fecha.getFullYear() + ' ' + dosDigitos(fecha.getHours()) + ':' +
+      dosDigitos(fecha.getMinutes());
+  }
+
+  function valorLog(entrada, key) {
+    return key === 'fechaTexto' ? fechaTexto(entrada.fecha) : String(entrada[key]);
+  }
+
+  /* Entradas que cumplen todos los filtros, de la más reciente a la más antigua */
+  function logRows() {
+    var activos = Object.keys(logFilters);
+
+    return historial.filter(function (entrada) {
+      return activos.every(function (indice) {
+        return normalize(valorLog(entrada, LOG_COLUMNAS[indice].key))
+          .indexOf(logFilters[indice]) !== -1;
+      });
+    }).reverse();
+  }
+
+  function openLogModal() {
+    var body = el('div', 'preview');
+
+    /* Encabezado con los mismos campos de solo lectura del resto de
+       las ventanas */
+    var resumen = el('div', 'preview__summary form-grid');
+
+    var campoUsuario = textField('Usuario en sesión', 2,
+      { value: USUARIO_SESION, readOnly: true });
+    var campoTotal = textField('Entradas', 2,
+      { value: String(historial.length), readOnly: true });
+    var campoMostradas = textField('Mostradas', 2, { value: '0', readOnly: true });
+
+    [campoUsuario, campoTotal, campoMostradas].forEach(function (campo) {
+      resumen.appendChild(campo);
+    });
+
+    body.appendChild(resumen);
+
+    var tabla = el('div', 'preview-table log-table');
+
+    LOG_COLUMNAS.forEach(function (col) {
+      var th = el('div', 'preview-table__th');
+      th.textContent = col.label;
+      tabla.appendChild(th);
+    });
+
+    /* Fila de búsqueda por columna */
+    LOG_COLUMNAS.forEach(function (col, indice) {
+      var box = el('div', 'log-search');
+
+      if (col.search) {
+        var input = el('input');
+        input.type = 'text';
+        input.placeholder = 'Buscar';
+        input.value = logFilters[indice] || '';
+        input.title = 'Escribe al menos ' + MIN_CHARS + ' caracteres y pulsa Enter ' +
+          'para filtrar por ' + col.label + (col.hint ? ' (' + col.hint + ')' : '');
+        input.setAttribute('aria-label', 'Filtrar la bitácora por ' + col.label);
+
+        input.addEventListener('keydown', function (event) {
+          if (event.key !== 'Enter') { return; }
+          event.preventDefault();
+
+          var valor = input.value.trim();
+          input.classList.remove('th-search__input--invalid');
+
+          if (valor === '') {
+            delete logFilters[indice];
+            pinta();
+            return;
+          }
+
+          if (valor.length < MIN_CHARS) {
+            input.classList.add('th-search__input--invalid');
+            return;
+          }
+
+          logFilters[indice] = normalize(valor);
+          pinta();
+        });
+
+        /* Al vaciar el campo se retira su filtro sin necesidad de Enter */
+        input.addEventListener('input', function () {
+          input.classList.remove('th-search__input--invalid');
+          if (input.value.trim() === '' && logFilters[indice] !== undefined) {
+            delete logFilters[indice];
+            pinta();
+          }
+        });
+
+        box.appendChild(input);
+      }
+
+      tabla.appendChild(box);
+    });
+
+    function pinta() {
+      Array.prototype.forEach.call(
+        tabla.querySelectorAll('.preview-table__td, .log-empty'),
+        function (node) { tabla.removeChild(node); }
+      );
+
+      var entradas = logRows();
+      campoMostradas._input.value = String(entradas.length);
+
+      if (!entradas.length) {
+        var vacio = el('div', 'log-empty');
+        vacio.textContent = 'No se encontraron entradas con los filtros aplicados';
+        tabla.appendChild(vacio);
+        return;
+      }
+
+      entradas.forEach(function (entrada, i) {
+        var base = 'preview-table__td ' + (i % 2 === 0 ? 'row--even' : 'row--odd');
+
+        LOG_COLUMNAS.forEach(function (col) {
+          var td = el('div', base + (col.text ? ' log-cell--text' : ''));
+          var valor = valorLog(entrada, col.key);
+
+          td.textContent = valor === '' ? '—' : valor;
+
+          if (col.key === 'accion') {
+            td.classList.add('log-cell--' + normalize(entrada.accion));
+          } else if (col.key === 'anterior') {
+            td.classList.add('log-cell--old');
+          }
+
+          tabla.appendChild(td);
+        });
+      });
+    }
+
+    body.appendChild(tabla);
+    pinta();
+
+    openModal({
+      title: 'Bitácora de cambios',
+      body: body,
+      wide: true,
+      xwide: true,
+      buttons: [{ label: 'Cerrar', variant: 'cancel' }]
+    });
   }
 
   /* ---------- Ventana de importación ---------- */
@@ -1337,7 +1619,7 @@
 
   /* Añade la equivalencia a la tabla y la deja a la vista */
   function addEquivalence(row) {
-    dataRows.unshift(row);
+    commitAlta(row);
     resaltado = row;
 
     /* Se retira el orden para que el registro quede al principio */
@@ -1365,7 +1647,7 @@
 
   /* Sustituye los datos del registro y lo deja a la vista */
   function updateEquivalence(registro, valores) {
-    valores.forEach(function (valor, index) { registro[index] = valor; });
+    commitEdicion(registro, valores);
 
     resaltado = registro;
     renderPagination();
@@ -1418,6 +1700,8 @@
       .addEventListener('click', function () { openEquivalenceModal(); });
     document.getElementById('btnImportar')
       .addEventListener('click', openImportModal);
+    document.getElementById('btnBitacora')
+      .addEventListener('click', openLogModal);
   }
 
   /* ---------- Selects interactivos ---------- */
