@@ -151,8 +151,14 @@ que se elige un archivo.
 Al pulsar `Guardar` se lee el archivo —`xlsx-read.js` interpreta el `.xlsx` en el
 navegador— y se revisa registro por registro. Después se abre la
 **previsualización**: una tabla ancha con todos los registros del archivo, los
-correctos y los erróneos en un mismo listado, encabezada por un resumen del tipo
-`5 registros, 4 correctos y 1 con errores`.
+correctos y los erróneos en un mismo listado, encabezada por una fila de campos
+de solo lectura con el mismo aspecto que los del formulario de alta —`Archivo`,
+`Registros`, `Correctos` y `Con errores`—.
+
+La tabla de la previsualización crece con el contenido hasta ocupar el 40 % de la
+altura de la ventana; a partir de ahí el excedente se desplaza dentro de la tabla,
+con el encabezado azul fijo, y la ventana ya no crece más. Así un archivo de cinco
+registros y otro de quinientos se presentan igual de bien.
 
 Cada registro con algún problema se muestra sobre fondo rojizo, con el dato
 concreto recuadrado y el detalle del error en la última columna; los correctos
@@ -164,8 +170,9 @@ o `Inactivo`.
 
 Si todo está correcto aparece el botón `Continuar`, que carga los registros al
 principio de la tabla y lo confirma con un toast. Si falla un solo dato, ese botón
-no se ofrece y en su lugar se muestra la leyenda de que hay que corregir el
-archivo y repetir el proceso.
+no se ofrece, el de cancelar pasa a llamarse `Cerrar` y a su izquierda, a la misma
+altura, se muestra la leyenda de que hay que corregir el archivo y repetir el
+proceso.
 
 ### Formulario de equivalencia
 

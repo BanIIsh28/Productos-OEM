@@ -27,6 +27,8 @@
    *   title   {string}  texto de la cabecera
    *   body    {Node}    contenido del cuerpo
    *   wide    {boolean} ventana ancha, para contenido tabular
+   *   note    {string}  leyenda que acompaña a los botones del pie,
+   *                     alineada a la izquierda de estos
    *   buttons {Array}   [{ label, variant, onClick }]; 'variant' es
    *                     'cancel' o 'save'. Devolver false en onClick
    *                     mantiene la ventana abierta.
@@ -67,11 +69,17 @@
     if (options.body) { body.appendChild(options.body); }
     modal.appendChild(body);
 
-    /* Pie con los botones */
-    if (options.buttons && options.buttons.length) {
+    /* Pie con los botones y, si se pide, una leyenda a su izquierda */
+    if ((options.buttons && options.buttons.length) || options.note) {
       var footer = el('div', 'modal__footer');
 
-      options.buttons.forEach(function (spec) {
+      if (options.note) {
+        var note = el('p', 'modal__note');
+        note.textContent = options.note;
+        footer.appendChild(note);
+      }
+
+      (options.buttons || []).forEach(function (spec) {
         var btn = el('button', 'btn btn--' + (spec.variant || 'cancel'));
         btn.type = 'button';
         btn.textContent = spec.label;

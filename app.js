@@ -767,12 +767,20 @@
 
     var body = el('div', 'preview');
 
-    /* Resumen */
-    var resumen = el('p', 'preview__summary');
-    resumen.textContent = nombreArchivo + ': ' + revisiones.length +
-      (revisiones.length === 1 ? ' registro' : ' registros') + ', ' +
-      correctos + (correctos === 1 ? ' correcto' : ' correctos') + ' y ' +
-      conErrores.length + (conErrores.length === 1 ? ' con error' : ' con errores') + '.';
+    /* Resumen del archivo, presentado como los campos del formulario de
+       alta: mismos títulos y cajas, todos de solo lectura */
+    var resumen = el('div', 'preview__summary form-grid');
+
+    [['Archivo', nombreArchivo, 3],
+     ['Registros', String(revisiones.length), 1],
+     ['Correctos', String(correctos), 1],
+     ['Con errores', String(conErrores.length), 1]
+    ].forEach(function (dato) {
+      var campo = textField(dato[0], dato[2], { value: dato[1], readOnly: true });
+      campo._input.title = dato[1];
+      resumen.appendChild(campo);
+    });
+
     body.appendChild(resumen);
 
     /* Tabla con los registros del archivo */
@@ -817,15 +825,12 @@
 
     body.appendChild(tabla);
 
-    /* Leyenda cuando el archivo no se puede cargar */
-    if (conErrores.length) {
-      var aviso = el('p', 'preview__notice');
-      aviso.textContent = 'Corrige el archivo y vuelve a intentar el proceso: ' +
-        'mientras haya un solo dato incorrecto no es posible cargar los registros.';
-      body.appendChild(aviso);
-    }
-
-    var buttons = [{ label: 'Cancelar', variant: 'cancel' }];
+    /* Con un solo dato incorrecto no hay carga posible: en su lugar, la
+       leyenda acompaña al botón de cierre en el pie de la ventana */
+    var buttons = [{
+      label: conErrores.length ? 'Cerrar' : 'Cancelar',
+      variant: 'cancel'
+    }];
 
     if (!conErrores.length) {
       buttons.push({
@@ -839,6 +844,10 @@
       title: 'Previsualización del archivo',
       body: body,
       wide: true,
+      note: conErrores.length
+        ? 'Corrige el archivo y vuelve a intentar el proceso: mientras haya un ' +
+          'solo dato incorrecto no es posible cargar los registros.'
+        : '',
       buttons: buttons
     });
   }
@@ -941,7 +950,7 @@
   var SUGGEST_MIN_CHARS = 3;
 
   function field(label, span) {
-    var wrapper = el('div', 'field' + (span ? ' field--span' + span : ''));
+    var wrapper = el('div', 'field' + (span > 1 ? ' field--span' + span : ''));
     var caption = el('label');
     caption.textContent = label;
     wrapper.appendChild(caption);
@@ -955,7 +964,7 @@
 
     var input = el('input');
     input.type = 'text';
-    if (opts.value) { input.value = opts.value; }
+    if (opts.value != null) { input.value = opts.value; }
     if (opts.placeholder) { input.placeholder = opts.placeholder; }
     if (opts.readOnly) {
       input.readOnly = true;
