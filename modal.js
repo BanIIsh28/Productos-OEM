@@ -31,6 +31,8 @@
    *                     de muchas columnas
    *   note    {string}  leyenda que acompaña a los botones del pie,
    *                     alineada a la izquierda de estos
+   *   aside   {Node}    control que ocupa el lado izquierdo del pie,
+   *                     a la altura de los botones
    *   buttons {Array}   [{ label, variant, onClick }]; 'variant' es
    *                     'cancel' o 'save'. Devolver false en onClick
    *                     mantiene la ventana abierta.
@@ -74,13 +76,19 @@
     modal.appendChild(body);
 
     /* Pie con los botones y, si se pide, una leyenda a su izquierda */
-    if ((options.buttons && options.buttons.length) || options.note) {
+    if ((options.buttons && options.buttons.length) || options.note || options.aside) {
       var footer = el('div', 'modal__footer');
 
       if (options.note) {
         var note = el('p', 'modal__note');
         note.textContent = options.note;
         footer.appendChild(note);
+      }
+
+      if (options.aside) {
+        var aside = el('div', 'modal__aside');
+        aside.appendChild(options.aside);
+        footer.appendChild(aside);
       }
 
       (options.buttons || []).forEach(function (spec) {

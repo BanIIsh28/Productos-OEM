@@ -395,29 +395,26 @@
     return btn;
   }
 
-  function renderPagination() {
-    var host = document.getElementById('pagination');
-    var last = totalPages();
-
-    /* La página actual puede quedar fuera de rango al filtrar */
-    if (page > last) { page = last; }
-
+  /* Dibuja la paginación en 'host': ventana de números que contiene la
+     página en curso, puntos y salto a la última cuando quedan más,
+     extremos deshabilitados y la página actual sin acción. La usan
+     tanto la tabla del catálogo como la de la bitácora. */
+  function paintPagination(host, actual, last, ir) {
     host.innerHTML = '';
 
-    host.appendChild(pageButton('<', page === 1 ? 'light' : 'navy', 'Página anterior', function () {
-      goToPage(page - 1);
-    }, page === 1));
+    host.appendChild(pageButton('<', actual === 1 ? 'light' : 'navy', 'Página anterior',
+      function () { ir(actual - 1); }, actual === 1));
 
     /* Ventana de números que siempre contiene la página actual */
-    var start = Math.min(Math.max(page - 1, 1), Math.max(last - PAGE_WINDOW + 1, 1));
+    var start = Math.min(Math.max(actual - 1, 1), Math.max(last - PAGE_WINDOW + 1, 1));
     var end = Math.min(start + PAGE_WINDOW - 1, last);
 
     for (var n = start; n <= end; n++) {
       (function (number) {
-        var active = number === page;
+        var active = number === actual;
         host.appendChild(pageButton(String(number), active ? 'grey' : 'navy',
           active ? 'Página actual' : 'Página ' + number,
-          function () { goToPage(number); }, active));
+          function () { ir(number); }, active));
       })(n);
     }
 
@@ -428,12 +425,20 @@
       host.appendChild(dots);
 
       host.appendChild(pageButton(String(last), 'navy', 'Ir a la última página',
-        function () { goToPage(last); }, false));
+        function () { ir(last); }, false));
     }
 
-    host.appendChild(pageButton('>', 'navy', 'Página siguiente', function () {
-      goToPage(page + 1);
-    }, page === last));
+    host.appendChild(pageButton('>', 'navy', 'Página siguiente',
+      function () { ir(actual + 1); }, actual === last));
+  }
+
+  function renderPagination() {
+    var last = totalPages();
+
+    /* La página actual puede quedar fuera de rango al filtrar */
+    if (page > last) { page = last; }
+
+    paintPagination(document.getElementById('pagination'), page, last, goToPage);
   }
 
   /* ---------- Celdas con control ---------- */
@@ -1004,6 +1009,8 @@
 
   /* Sobreviven al cierre de la ventana, para retomar la consulta */
   var logFilters = {};
+  var logPage = 1;
+  var logPageSize = 25;
 
   function dosDigitos(numero) { return (numero < 10 ? '0' : '') + numero; }
 
@@ -1032,21 +1039,22 @@
   function openLogModal() {
     var body = el('div', 'preview');
 
-    /* Encabezado con los mismos campos de solo lectura del resto de
-       las ventanas */
-    var resumen = el('div', 'preview__summary form-grid');
+    /* Fila superior: los datos del historial a la izquierda, con los
+       mismos campos de solo lectura del resto de las ventanas, y la
+       paginación al extremo opuesto */
+    var cabecera = el('div', 'log-head');
 
-    var campoUsuario = textField('Usuario en sesión', 2,
-      { value: USUARIO_SESION, readOnly: true });
-    var campoTotal = textField('Entradas', 2,
+    var campoTotal = textField('Entradas', 1,
       { value: String(historial.length), readOnly: true });
-    var campoMostradas = textField('Mostradas', 2, { value: '0', readOnly: true });
+    var campoMostradas = textField('Mostradas', 1, { value: '0', readOnly: true });
 
-    [campoUsuario, campoTotal, campoMostradas].forEach(function (campo) {
-      resumen.appendChild(campo);
-    });
+    cabecera.appendChild(campoTotal);
+    cabecera.appendChild(campoMostradas);
 
-    body.appendChild(resumen);
+    var paginacion = el('div', 'pagination');
+    cabecera.appendChild(paginacion);
+
+    body.appendChild(cabecera);
 
     var tabla = el('div', 'preview-table log-table');
 
@@ -1078,6 +1086,7 @@
 
           if (valor === '') {
             delete logFilters[indice];
+            logPage = 1;
             pinta();
             return;
           }
@@ -1088,6 +1097,7 @@
           }
 
           logFilters[indice] = normalize(valor);
+          logPage = 1;
           pinta();
         });
 
@@ -1096,6 +1106,7 @@
           input.classList.remove('th-search__input--invalid');
           if (input.value.trim() === '' && logFilters[indice] !== undefined) {
             delete logFilters[indice];
+            logPage = 1;
             pinta();
           }
         });
@@ -1115,6 +1126,19 @@
       var entradas = logRows();
       campoMostradas._input.value = String(entradas.length);
 
+      /* La página en curso puede quedar fuera de rango al filtrar o al
+         cambiar el número de registros por página */
+      var ultima = Math.max(1, Math.ceil(entradas.length / logPageSize));
+      if (logPage > ultima) { logPage = ultima; }
+
+      paintPagination(paginacion, logPage, ultima, function (destino) {
+        var siguiente = Math.min(Math.max(destino, 1), ultima);
+        if (siguiente === logPage) { return; }
+        logPage = siguiente;
+        pinta();
+        tabla.scrollTop = 0;
+      });
+
       if (!entradas.length) {
         var vacio = el('div', 'log-empty');
         vacio.textContent = 'No se encontraron entradas con los filtros aplicados';
@@ -1122,7 +1146,9 @@
         return;
       }
 
-      entradas.forEach(function (entrada, i) {
+      var inicio = (logPage - 1) * logPageSize;
+
+      entradas.slice(inicio, inicio + logPageSize).forEach(function (entrada, i) {
         var base = 'preview-table__td ' + (i % 2 === 0 ? 'row--even' : 'row--odd');
 
         LOG_COLUMNAS.forEach(function (col) {
@@ -1145,13 +1171,33 @@
     body.appendChild(tabla);
     pinta();
 
+    /* Registros por página, al lado izquierdo del pie */
+    var pie = el('div', 'log-rows');
+
+    var etiqueta = el('label');
+    etiqueta.textContent = 'Registros por página:';
+    pie.appendChild(etiqueta);
+
+    var selRegistros = el('div', 'select select--rows select--up');
+    selRegistros.setAttribute('data-options', '25|50|75|100');
+    pie.appendChild(selRegistros);
+
     openModal({
       title: 'Bitácora de cambios',
       body: body,
       wide: true,
       xwide: true,
+      aside: pie,
       buttons: [{ label: 'Cerrar', variant: 'cancel' }]
     });
+
+    /* El desplegable se construye una vez la ventana está en el documento */
+    buildSelect(selRegistros, CARET_ROWS_SVG, function (option) {
+      logPageSize = Number(option);
+      logPage = 1;
+      pinta();
+      tabla.scrollTop = 0;
+    }, String(logPageSize));
   }
 
   /* ---------- Ventana de importación ---------- */

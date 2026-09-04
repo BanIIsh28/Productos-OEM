@@ -845,6 +845,14 @@ a:hover { color: rgb(0, 50, 90); }
 
 /* Leyenda que acompaña a los botones: ocupa el hueco libre del pie
    para quedar a la altura de estos, alineada al lado opuesto */
+/* Control del lado izquierdo del pie: ocupa el hueco libre para que
+   los botones sigan pegados al lado opuesto */
+.modal__aside {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
 .modal__note {
   flex: 1;
   margin: 0;
@@ -1189,6 +1197,35 @@ a:hover { color: rgb(0, 50, 90); }
 .log-cell--edicion { color: rgb(150, 110, 20); font-weight: 700; }
 .log-cell--baja { color: rgb(160, 40, 40); font-weight: 700; }
 .log-cell--reactivacion { color: rgb(0, 75, 131); font-weight: 700; }
+
+/* Fila superior: los dos datos a la izquierda y la paginación al
+   extremo opuesto, todo a la misma altura */
+.log-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+/* Cajas cortas: los valores son cifras de pocos dígitos */
+.log-head .field {
+  width: 92px;
+  flex: none;
+}
+
+/* "Registros por página" del pie, con el mismo aspecto que el de la
+   tabla del catálogo */
+.log-rows {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.log-rows > label {
+  font-size: 12px;
+  color: rgb(0, 0, 0);
+  white-space: nowrap;
+}
 
 /* Sin coincidencias */
 .log-empty {

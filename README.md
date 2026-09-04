@@ -252,10 +252,21 @@ SKU dejan solo los cambios de esa persona sobre ese registro. La fecha se busca
 sobre el texto `dd/mm/aaaa hh:mm`, así que `09/2026` acota un mes y `04/09` un día.
 Los filtros se conservan al cerrar y reabrir la ventana, para retomar la consulta.
 
-Encabezando la tabla, la misma fila de campos de solo lectura del resto de las
-ventanas: `Usuario en sesión`, `Entradas` (el total) y `Mostradas` (las que
-quedan tras los filtros). La tabla crece hasta el 42 % de la altura de la ventana
-y a partir de ahí se desplaza internamente con el encabezado fijo.
+Encabezando la tabla, dos campos cortos de solo lectura pegados al lado
+izquierdo —`Entradas` (el total) y `Mostradas` (las que quedan tras los
+filtros)— y, en la misma fila al extremo opuesto, la **paginación**, con las
+mismas funciones que la de la tabla del catálogo: ventana de cuatro números que
+siempre contiene la página en curso, `...` y el número de la última cuando quedan
+más, extremos deshabilitados en el gris reservado y la página actual sin acción en
+su propio gris. Cambiar de página devuelve el desplazamiento al principio de la
+tabla, y filtrar vuelve a la primera página.
+
+En el pie, a la izquierda del botón `Cerrar` y a su misma altura, el selector
+`Registros por página` con las opciones 25, 50, 75 y 100 —el mismo control del pie
+de la vista principal, desplegándose hacia arriba—. La elección y los filtros se
+conservan al cerrar y reabrir la ventana. La tabla crece hasta el 42 % de la
+altura de la ventana y a partir de ahí se desplaza internamente con el encabezado
+fijo, así que la ventana mide lo mismo con 25 registros por página que con 100.
 
 El catálogo arranca con un historial previo verosímil —el alta de cada uno de los
 182 registros más algunas ediciones y cambios de estatus repartidos en los últimos
