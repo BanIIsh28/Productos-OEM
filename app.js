@@ -654,6 +654,50 @@
     });
   }
 
+  /* ---------- Ventana de importación ---------- */
+
+  function openImportModal() {
+    var body = el('div', 'modal-message');
+
+    var text = el('p', 'modal-message__text');
+    text.textContent = 'Seleccione el documento que desee cargar.';
+    body.appendChild(text);
+
+    var picker = el('div', 'file-field');
+
+    var input = el('input');
+    input.type = 'file';
+    input.accept = '.xlsx';
+    input.setAttribute('aria-label', 'Archivo por cargar');
+    picker.appendChild(input);
+
+    body.appendChild(picker);
+
+    var botonGuardar = null;
+
+    input.addEventListener('change', function () {
+      if (!botonGuardar) { return; }
+      var elegido = input.files && input.files.length > 0;
+      botonGuardar.disabled = !elegido;
+      botonGuardar.title = elegido
+        ? 'Cargar el archivo'
+        : 'Elige un archivo para poder cargarlo';
+    });
+
+    var ventana = openModal({
+      title: 'Importar archivo',
+      body: body,
+      buttons: [
+        { label: 'Guardar', variant: 'save' }
+      ]
+    });
+
+    /* Guardar espera a que haya un archivo elegido */
+    botonGuardar = ventana.element.querySelector('.btn--save');
+    botonGuardar.disabled = true;
+    botonGuardar.title = 'Elige un archivo para poder cargarlo';
+  }
+
   /* ---------- Ventana de equivalencia ---------- */
 
   /* Caracteres mínimos para que una búsqueda del formulario devuelva
@@ -1127,6 +1171,8 @@
     /* Se envuelve para que el evento del clic no llegue como registro */
     document.getElementById('btnEquivalencia')
       .addEventListener('click', function () { openEquivalenceModal(); });
+    document.getElementById('btnImportar')
+      .addEventListener('click', openImportModal);
   }
 
   /* ---------- Selects interactivos ---------- */

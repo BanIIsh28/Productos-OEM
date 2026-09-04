@@ -1007,3 +1007,20 @@ a:hover { color: rgb(0, 50, 90); }
   line-height: 1.5;
   color: rgb(0, 0, 0);
 }
+
+/* Selector de archivo de la ventana de importación */
+.file-field {
+  margin-top: 14px;
+}
+
+.file-field input[type="file"] {
+  font-family: inherit;
+  font-size: 12px;
+  color: rgb(0, 0, 0);
+}
+
+.file-field input[type="file"]::file-selector-button {
+  font-family: inherit;
+  font-size: 12px;
+  margin-right: 8px;
+}

@@ -140,6 +140,14 @@ si de verdad se quiere activar o desactivar el estatus de esa equivalencia,
 nombrando su SKU. Cancelar, cerrar con la `X` o pulsar `Escape` deja el estatus
 como estaba.
 
+### Ventana de importación
+
+El botón `Importar` abre una ventana con el texto
+`Seleccione el documento que desee cargar.`, un selector de archivo limitado a
+`.xlsx` y el botón `Guardar`, que permanece deshabilitado en el verde claro hasta
+que se elige un archivo. Por ahora solo presenta la vista: la carga de los
+registros del archivo está pendiente.
+
 ### Formulario de equivalencia
 
 La misma ventana sirve para dar de alta una equivalencia, desde
