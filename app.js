@@ -240,6 +240,10 @@
   var page = 1;
   var pageSize = 25;
 
+  /* Registro recién agregado, resaltado durante unos segundos */
+  var nuevoRegistro = null;
+  var nuevoTimer = null;
+
   function totalPages() {
     return Math.max(1, Math.ceil(filteredRows().length / pageSize));
   }
@@ -377,6 +381,7 @@
 
     rows.forEach(function (row, i) {
       var rowClass = i % 2 === 0 ? 'row--even' : 'row--odd';
+      if (row === nuevoRegistro) { rowClass += ' row--new'; }
 
       columns.forEach(function (col, index) {
         var td = el('div', 'td ' + rowClass);
@@ -728,6 +733,10 @@
 
     /* El desplegable se construye una vez insertado en el documento */
     wrapper._initSelect = function () { buildSelect(select, CARET_FILTER_SVG); };
+    wrapper._value = function () {
+      var span = select.querySelector('.select__trigger span');
+      return span ? span.textContent : '';
+    };
     return wrapper;
   }
 
@@ -775,12 +784,77 @@
     var campos = [sku, nombreProducto, proveedor, codigoExterno, alcance, empaque, cantidad];
     campos.forEach(function (campo) { body.appendChild(campo); });
 
+    var SIN_ALCANCE = '- Selecciona un alcance -';
+
+    function marcar(campo, invalido) {
+      var control = campo._input || campo.querySelector('.select__trigger');
+      control.classList.toggle('input--invalid', invalido);
+    }
+
+    /* Un código externo con la longitud de un GTIN se considera GS1 */
+    function tipoDe(codigo) {
+      return /^\d{8}$|^\d{12,14}$/.test(codigo) ? 'GS1' : 'No GS1';
+    }
+
+    function guardar() {
+      var valores = {
+        sku: sku._input.value.trim(),
+        producto: nombreProducto._input.value.trim(),
+        proveedor: proveedor._input.value.trim(),
+        codigo: codigoExterno._input.value.trim(),
+        alcance: alcance._value(),
+        empaque: empaque._input.value.trim(),
+        cantidad: cantidad._input.value.trim()
+      };
+
+      /* El SKU debe corresponder a un producto del catálogo */
+      var producto = CATALOGO.filter(function (p) {
+        return p.codigo === valores.sku;
+      })[0];
+
+      var faltantes = [];
+
+      if (!producto) { faltantes.push('SKU'); }
+      if (!valores.proveedor) { faltantes.push('Proveedor'); }
+      if (!valores.codigo) { faltantes.push('Código externo'); }
+      if (valores.alcance === SIN_ALCANCE) { faltantes.push('Alcance'); }
+      if (!valores.empaque) { faltantes.push('Empaque'); }
+      if (!valores.cantidad) { faltantes.push('Cantidad'); }
+
+      marcar(sku, !producto);
+      marcar(proveedor, !valores.proveedor);
+      marcar(codigoExterno, !valores.codigo);
+      marcar(alcance, valores.alcance === SIN_ALCANCE);
+      marcar(empaque, !valores.empaque);
+      marcar(cantidad, !valores.cantidad);
+
+      if (faltantes.length) {
+        showToast(faltantes.length === 1
+          ? 'Falta capturar ' + faltantes[0]
+          : 'Faltan datos por capturar: ' + faltantes.join(', '), 'error');
+        return false;   /* la ventana permanece abierta */
+      }
+
+      addEquivalence([
+        valores.sku,
+        valores.proveedor,
+        tipoDe(valores.codigo),
+        valores.codigo,
+        valores.alcance,
+        valores.empaque,
+        valores.cantidad,
+        true            /* los registros nuevos entran activos */
+      ]);
+
+      return true;
+    }
+
     openModal({
       title: 'Agregar equivalencia',
       body: body,
       buttons: [
         { label: 'Cancelar', variant: 'cancel' },
-        { label: 'Guardar', variant: 'save' }
+        { label: 'Guardar', variant: 'save', onClick: guardar }
       ]
     });
 
@@ -789,6 +863,34 @@
     });
 
     sku._input.focus();
+  }
+
+  /* Añade la equivalencia a la tabla y la deja a la vista */
+  function addEquivalence(row) {
+    dataRows.unshift(row);
+    nuevoRegistro = row;
+
+    /* Se retira el orden para que el registro quede al principio */
+    sort.index = null;
+    updateSortIndicators();
+
+    page = 1;
+    renderPagination();
+    renderRows();
+
+    var visible = filteredRows().indexOf(row) !== -1;
+
+    showToast(visible
+      ? 'Se agregó la equivalencia del SKU ' + row[COL_SKU]
+      : 'Se agregó la equivalencia del SKU ' + row[COL_SKU] +
+        ', aunque no se muestra con los filtros aplicados', visible ? 'success' : 'warning');
+
+    /* El resaltado dura lo mismo que el aviso */
+    clearTimeout(nuevoTimer);
+    nuevoTimer = setTimeout(function () {
+      nuevoRegistro = null;
+      renderRows();
+    }, 4000);
   }
 
   /* ---------- Filtros superiores ---------- */

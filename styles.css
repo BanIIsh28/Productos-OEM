@@ -958,3 +958,17 @@ a:hover { color: rgb(0, 50, 90); }
   font-size: 12px;
   color: rgb(130, 130, 130);
 }
+
+/* Campo del formulario sin capturar al intentar guardar */
+.input--invalid,
+.input--invalid:focus,
+.field .select--open .input--invalid {
+  border-color: rgb(200, 70, 70);
+  background: rgb(253, 240, 240);
+}
+
+/* Registro recién agregado a la tabla */
+.row--new {
+  background: rgb(226, 242, 232);
+  transition: background 0.4s ease;
+}
