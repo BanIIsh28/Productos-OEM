@@ -880,7 +880,20 @@ a:hover { color: rgb(0, 50, 90); }
 
 .field input:focus { outline: 1px solid rgb(0, 75, 131); }
 
+/* En los formularios el desplegable se presenta como los campos de
+   texto: contorno gris en lugar del negro de la vista principal */
 .field .select { width: 100%; }
+
+.field .select__trigger {
+  box-shadow: none;
+  border: 1px solid rgb(190, 190, 190);
+  /* El borde ocupa 2 px: se descuentan del relleno para conservar
+     la misma altura que los campos de texto */
+  padding: 6px 10px;
+}
+
+.field .select--open .select__trigger,
+.field .select__trigger:focus-visible { border-color: rgb(0, 75, 131); }
 
 /* Estilo reservado para los campos de solo lectura de las ventanas:
    el mismo del campo "SKU". Se aplica con el atributo readonly o con
