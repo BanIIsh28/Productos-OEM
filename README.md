@@ -147,8 +147,9 @@ El catálogo se inventa al cargar la vista: 30 familias de refacción por 30
 aplicaciones, 900 productos con código de 7 dígitos agrupados por familia.
 
 Al pulsar `Guardar`, si falta algún dato los campos se marcan en rojo, un toast
-enumera lo que falta y la ventana permanece abierta. El SKU debe corresponder a
-un producto del catálogo. Con todo capturado, la equivalencia se añade al
+enumera lo que falta y la ventana permanece abierta. El SKU y el proveedor deben
+corresponder a un registro existente: no basta escribirlos, hay que elegirlos de
+la lista. Con todo capturado, la equivalencia se añade al
 principio de la tabla: se retira el orden y se vuelve a la primera página para
 dejarla a la vista, queda resaltada unos segundos y un toast lo confirma —o
 advierte si los filtros activos la dejan fuera—. El `Tipo` se deduce del código

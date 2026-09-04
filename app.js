@@ -635,7 +635,13 @@
     var input = el('input');
     input.type = 'text';
     if (opts.placeholder) { input.placeholder = opts.placeholder; }
-    if (opts.readOnly) { input.readOnly = true; }
+    if (opts.readOnly) {
+      input.readOnly = true;
+      /* Ni se enfoca ni muestra cursor de texto: no da la impresión
+         de ser editable */
+      input.tabIndex = -1;
+      input.addEventListener('mousedown', function (event) { event.preventDefault(); });
+    }
     if (opts.digitsOnly) {
       input.inputMode = 'numeric';
       input.addEventListener('input', function () {
@@ -807,22 +813,26 @@
         cantidad: cantidad._input.value.trim()
       };
 
-      /* El SKU debe corresponder a un producto del catálogo */
+      /* El SKU y el proveedor deben corresponder a un registro existente */
       var producto = CATALOGO.filter(function (p) {
         return p.codigo === valores.sku;
       })[0];
 
+      var proveedorValido = PROVEEDORES.some(function (nombre) {
+        return normalize(nombre) === normalize(valores.proveedor);
+      });
+
       var faltantes = [];
 
       if (!producto) { faltantes.push('SKU'); }
-      if (!valores.proveedor) { faltantes.push('Proveedor'); }
+      if (!proveedorValido) { faltantes.push('Proveedor'); }
       if (!valores.codigo) { faltantes.push('Código externo'); }
       if (valores.alcance === SIN_ALCANCE) { faltantes.push('Alcance'); }
       if (!valores.empaque) { faltantes.push('Empaque'); }
       if (!valores.cantidad) { faltantes.push('Cantidad'); }
 
       marcar(sku, !producto);
-      marcar(proveedor, !valores.proveedor);
+      marcar(proveedor, !proveedorValido);
       marcar(codigoExterno, !valores.codigo);
       marcar(alcance, valores.alcance === SIN_ALCANCE);
       marcar(empaque, !valores.empaque);
@@ -835,9 +845,14 @@
         return false;   /* la ventana permanece abierta */
       }
 
+      /* Se guarda el nombre tal como aparece en el catálogo */
+      var proveedorCatalogo = PROVEEDORES.filter(function (nombre) {
+        return normalize(nombre) === normalize(valores.proveedor);
+      })[0];
+
       addEquivalence([
         valores.sku,
-        valores.proveedor,
+        proveedorCatalogo,
         tipoDe(valores.codigo),
         valores.codigo,
         valores.alcance,
