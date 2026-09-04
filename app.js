@@ -656,6 +656,213 @@
     });
   }
 
+  /* ---------- Verificación del archivo por importar ---------- */
+
+  var COLUMNAS_ARCHIVO = ['SKU', 'Proveedor', 'Tipo', 'Código externo',
+    'Alcance', 'Empaque', 'Cantidad', 'Estatus'];
+
+  var ESTATUS = ['Activo', 'Inactivo'];
+
+  function existeProducto(codigo) {
+    return CATALOGO.some(function (p) { return p.codigo === codigo; });
+  }
+
+  function existeProveedor(nombre) {
+    return PROVEEDORES.some(function (p) { return normalize(p) === normalize(nombre); });
+  }
+
+  /* Revisa una fila del archivo y devuelve sus errores por columna */
+  function revisarFila(celdas) {
+    var valores = COLUMNAS_ARCHIVO.map(function (_, i) {
+      return String(celdas[i] === undefined || celdas[i] === null ? '' : celdas[i]).trim();
+    });
+
+    var errores = {};
+
+    function fallo(indice, mensaje) {
+      if (!errores[indice]) { errores[indice] = mensaje; }
+    }
+
+    /* SKU */
+    if (!valores[0]) {
+      fallo(0, 'El SKU está vacío');
+    } else if (!/^\d+$/.test(valores[0])) {
+      fallo(0, 'El SKU debe ser numérico');
+    } else if (!existeProducto(valores[0])) {
+      fallo(0, 'El SKU no existe en el catálogo');
+    }
+
+    /* Proveedor */
+    if (!valores[1]) {
+      fallo(1, 'El proveedor está vacío');
+    } else if (!existeProveedor(valores[1])) {
+      fallo(1, 'El proveedor no está registrado');
+    }
+
+    /* Tipo */
+    if (!valores[2]) {
+      fallo(2, 'El tipo está vacío');
+    } else if (TIPOS.indexOf(valores[2]) === -1) {
+      fallo(2, 'El tipo debe ser GS1 o No GS1');
+    }
+
+    /* Código externo */
+    if (!valores[3]) { fallo(3, 'El código externo está vacío'); }
+
+    /* Alcance */
+    if (!valores[4]) {
+      fallo(4, 'El alcance está vacío');
+    } else if (ALCANCES.indexOf(valores[4]) === -1) {
+      fallo(4, 'El alcance debe ser Producto o Presentación');
+    }
+
+    /* Empaque y cantidad */
+    [
+      { indice: 5, sujeto: 'El empaque', vacio: 'vacío' },
+      { indice: 6, sujeto: 'La cantidad', vacio: 'vacía' }
+    ].forEach(function (campo) {
+      var valor = valores[campo.indice];
+
+      if (!valor) {
+        fallo(campo.indice, campo.sujeto + ' está ' + campo.vacio);
+      } else if (!/^\d+$/.test(valor) || Number(valor) < 1) {
+        fallo(campo.indice, campo.sujeto + ' debe ser un número mayor que cero');
+      }
+    });
+
+    /* Estatus */
+    if (!valores[7]) {
+      fallo(7, 'El estatus está vacío');
+    } else if (ESTATUS.indexOf(valores[7]) === -1) {
+      fallo(7, 'El estatus debe ser Activo o Inactivo');
+    }
+
+    return { valores: valores, errores: errores };
+  }
+
+  /* Convierte las filas del archivo en registros revisados */
+  function revisarArchivo(filas) {
+    /* Se descarta la fila de encabezados y las completamente vacías */
+    var cuerpo = filas.slice(1).filter(function (celdas) {
+      return celdas.some(function (celda) {
+        return String(celda === undefined ? '' : celda).trim() !== '';
+      });
+    });
+
+    return cuerpo.map(function (celdas, i) {
+      var revision = revisarFila(celdas);
+      revision.linea = i + 2;          /* número de fila en el archivo */
+      return revision;
+    });
+  }
+
+  /* ---------- Ventana de previsualización ---------- */
+
+  function openPreviewModal(revisiones, nombreArchivo) {
+    var conErrores = revisiones.filter(function (r) {
+      return Object.keys(r.errores).length > 0;
+    });
+
+    var correctos = revisiones.length - conErrores.length;
+
+    var body = el('div', 'preview');
+
+    /* Resumen */
+    var resumen = el('p', 'preview__summary');
+    resumen.textContent = nombreArchivo + ': ' + revisiones.length +
+      (revisiones.length === 1 ? ' registro' : ' registros') + ', ' +
+      correctos + (correctos === 1 ? ' correcto' : ' correctos') + ' y ' +
+      conErrores.length + (conErrores.length === 1 ? ' con error' : ' con errores') + '.';
+    body.appendChild(resumen);
+
+    /* Tabla con los registros del archivo */
+    var tabla = el('div', 'preview-table');
+
+    ['Fila'].concat(COLUMNAS_ARCHIVO, ['Detalle']).forEach(function (titulo) {
+      var th = el('div', 'preview-table__th');
+      th.textContent = titulo;
+      tabla.appendChild(th);
+    });
+
+    revisiones.forEach(function (revision, i) {
+      var malo = Object.keys(revision.errores).length > 0;
+      var base = 'preview-table__td ' + (i % 2 === 0 ? 'row--even' : 'row--odd') +
+        (malo ? ' preview-table__td--bad' : '');
+
+      var linea = el('div', base);
+      linea.textContent = revision.linea;
+      tabla.appendChild(linea);
+
+      revision.valores.forEach(function (valor, indice) {
+        var td = el('div', base + (revision.errores[indice] ? ' preview-table__td--cell' : ''));
+        td.textContent = valor === '' ? '—' : valor;
+        if (revision.errores[indice]) { td.title = revision.errores[indice]; }
+        tabla.appendChild(td);
+      });
+
+      var detalle = el('div', base + ' preview-table__td--detail');
+
+      if (malo) {
+        detalle.textContent = Object.keys(revision.errores)
+          .sort(function (a, b) { return a - b; })
+          .map(function (indice) { return revision.errores[indice]; })
+          .join('. ');
+      } else {
+        detalle.textContent = 'Correcto';
+        detalle.classList.add('preview-table__td--ok');
+      }
+
+      tabla.appendChild(detalle);
+    });
+
+    body.appendChild(tabla);
+
+    /* Leyenda cuando el archivo no se puede cargar */
+    if (conErrores.length) {
+      var aviso = el('p', 'preview__notice');
+      aviso.textContent = 'Corrige el archivo y vuelve a intentar el proceso: ' +
+        'mientras haya un solo dato incorrecto no es posible cargar los registros.';
+      body.appendChild(aviso);
+    }
+
+    var buttons = [{ label: 'Cancelar', variant: 'cancel' }];
+
+    if (!conErrores.length) {
+      buttons.push({
+        label: 'Continuar',
+        variant: 'save',
+        onClick: function () { importRows(revisiones); }
+      });
+    }
+
+    openModal({
+      title: 'Previsualización del archivo',
+      body: body,
+      wide: true,
+      buttons: buttons
+    });
+  }
+
+  /* Alta de los registros del archivo */
+  function importRows(revisiones) {
+    var nuevos = revisiones.map(function (revision) {
+      var v = revision.valores;
+      return [v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] === 'Activo'];
+    });
+
+    /* Se insertan al principio, en el orden del archivo */
+    nuevos.slice().reverse().forEach(function (row) { dataRows.unshift(row); });
+
+    sort.index = null;
+    updateSortIndicators();
+    page = 1;
+    renderPagination();
+    renderRows();
+
+    showToast('Se cargaron ' + nuevos.length +
+      (nuevos.length === 1 ? ' equivalencia' : ' equivalencias') + ' del archivo', 'success');
+  }
+
   /* ---------- Ventana de importación ---------- */
 
   function openImportModal() {
@@ -686,11 +893,38 @@
         : 'Elige un archivo para poder cargarlo';
     });
 
+    function revisar() {
+      var archivo = input.files && input.files[0];
+      if (!archivo) { return false; }
+
+      botonGuardar.disabled = true;
+      botonGuardar.textContent = 'Revisando…';
+
+      readXlsx(archivo).then(function (filas) {
+        var revisiones = revisarArchivo(filas);
+
+        if (revisiones.length === 0) {
+          botonGuardar.disabled = false;
+          botonGuardar.textContent = 'Guardar';
+          showToast('El archivo no contiene registros', 'warning');
+          return;
+        }
+
+        openPreviewModal(revisiones, archivo.name);
+      }).catch(function (error) {
+        botonGuardar.disabled = false;
+        botonGuardar.textContent = 'Guardar';
+        showToast('No se pudo leer el archivo: ' + error.message, 'error');
+      });
+
+      return false;   /* la ventana se sustituye al terminar la revisión */
+    }
+
     var ventana = openModal({
       title: 'Importar archivo',
       body: body,
       buttons: [
-        { label: 'Guardar', variant: 'save' }
+        { label: 'Guardar', variant: 'save', onClick: revisar }
       ]
     });
 

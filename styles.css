@@ -1024,3 +1024,88 @@ a:hover { color: rgb(0, 50, 90); }
   font-size: 12px;
   margin-right: 8px;
 }
+
+/* ---------- Previsualización del archivo por importar ---------- */
+
+/* Ventana ancha, para el contenido tabular */
+.modal--wide { width: min(1100px, 100%); }
+
+.preview__summary {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: rgb(0, 0, 0);
+}
+
+.preview-table {
+  display: grid;
+  grid-template-columns:
+    44px                  /* Fila */
+    minmax(0, 0.8fr)      /* SKU */
+    minmax(0, 1.5fr)      /* Proveedor */
+    minmax(0, 0.6fr)      /* Tipo */
+    minmax(0, 1fr)        /* Código externo */
+    minmax(0, 0.9fr)      /* Alcance */
+    minmax(0, 0.6fr)      /* Empaque */
+    minmax(0, 0.6fr)      /* Cantidad */
+    minmax(0, 0.7fr)      /* Estatus */
+    minmax(0, 2.4fr);     /* Detalle */
+  max-height: 46vh;
+  overflow-y: auto;
+  border: 1px solid rgb(214, 214, 214);
+}
+
+.preview-table__th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgb(0, 75, 131);
+  box-shadow: 0 0 0 1px rgb(255, 255, 255);
+  display: flex;
+  padding: 7px 8px;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  color: rgb(255, 255, 255);
+  text-align: center;
+}
+
+.preview-table__td {
+  display: flex;
+  padding: 7px 8px;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: rgb(0, 0, 0);
+  text-align: center;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
+}
+
+/* Registro con algún dato incorrecto */
+.preview-table__td--bad { background: rgb(253, 240, 240); }
+
+/* Dato concreto que falla */
+.preview-table__td--cell {
+  box-shadow: inset 0 0 0 1px rgb(200, 70, 70);
+  color: rgb(160, 40, 40);
+  font-weight: 700;
+}
+
+.preview-table__td--detail {
+  justify-content: flex-start;
+  text-align: left;
+  color: rgb(160, 40, 40);
+}
+
+.preview-table__td--ok {
+  color: rgb(60, 130, 85);
+  font-weight: 700;
+}
+
+.preview__notice {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgb(160, 40, 40);
+}

@@ -26,6 +26,7 @@
    * @param {Object} options
    *   title   {string}  texto de la cabecera
    *   body    {Node}    contenido del cuerpo
+   *   wide    {boolean} ventana ancha, para contenido tabular
    *   buttons {Array}   [{ label, variant, onClick }]; 'variant' es
    *                     'cancel' o 'save'. Devolver false en onClick
    *                     mantiene la ventana abierta.
@@ -39,7 +40,7 @@
 
     var overlay = el('div', 'modal-overlay');
 
-    var modal = el('div', 'modal');
+    var modal = el('div', 'modal' + (options.wide ? ' modal--wide' : ''));
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
     modal.tabIndex = -1;

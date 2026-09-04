@@ -12,6 +12,7 @@ componentes e iconografía).
 | `styles.css` | Estilos completos de la interfaz. |
 | `app.js` | Datos de la vista y comportamiento (paginación, tabla, filtros, orden, exportación y selects). |
 | `xlsx.js` | Generador de archivos `.xlsx` en el navegador, sin dependencias. |
+| `xlsx-read.js` | Lector de archivos `.xlsx` en el navegador (`readXlsx`). |
 | `toast.js` | Mensajes toast del módulo (`showToast`). |
 | `modal.js` | Ventanas modales del módulo (`openModal`). |
 | `assets/logo-apymsa.png` | Logotipo del encabezado del menú lateral. |
@@ -145,8 +146,26 @@ como estaba.
 El botón `Importar` abre una ventana con el texto
 `Seleccione el documento que desee cargar.`, un selector de archivo limitado a
 `.xlsx` y el botón `Guardar`, que permanece deshabilitado en el verde claro hasta
-que se elige un archivo. Por ahora solo presenta la vista: la carga de los
-registros del archivo está pendiente.
+que se elige un archivo.
+
+Al pulsar `Guardar` se lee el archivo —`xlsx-read.js` interpreta el `.xlsx` en el
+navegador— y se revisa registro por registro. Después se abre la
+**previsualización**: una tabla ancha con todos los registros del archivo, los
+correctos y los erróneos en un mismo listado, encabezada por un resumen del tipo
+`5 registros, 4 correctos y 1 con errores`.
+
+Cada registro con algún problema se muestra sobre fondo rojizo, con el dato
+concreto recuadrado y el detalle del error en la última columna; los correctos
+llevan la palabra `Correcto`. Se comprueba que el SKU exista en el catálogo, que
+el proveedor esté registrado, que el tipo sea `GS1` o `No GS1`, que el código
+externo no esté vacío, que el alcance sea `Producto` o `Presentación`, que el
+empaque y la cantidad sean números mayores que cero y que el estatus sea `Activo`
+o `Inactivo`.
+
+Si todo está correcto aparece el botón `Continuar`, que carga los registros al
+principio de la tabla y lo confirma con un toast. Si falla un solo dato, ese botón
+no se ofrece y en su lugar se muestra la leyenda de que hay que corregir el
+archivo y repetir el proceso.
 
 ### Formulario de equivalencia
 
