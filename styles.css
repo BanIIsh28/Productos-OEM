@@ -960,16 +960,27 @@ a:hover { color: rgb(0, 50, 90); }
   color: rgb(130, 130, 130);
 }
 
-/* Campo del formulario sin capturar al intentar guardar */
-.input--invalid,
-.input--invalid:focus,
-.field .select--open .input--invalid {
+/* Campo del formulario pendiente de capturar: se resalta también en
+   reposo, hasta que tenga un valor válido */
+.field input.input--invalid,
+.field input.input--invalid:focus,
+.field .select__trigger.input--invalid,
+.field .select--open .select__trigger.input--invalid {
   border-color: rgb(200, 70, 70);
   background: rgb(253, 240, 240);
 }
+
+.field input.input--invalid:focus { outline-color: rgb(200, 70, 70); }
 
 /* Registro recién agregado a la tabla */
 .row--new {
   background: rgb(226, 242, 232);
   transition: background 0.4s ease;
+}
+
+/* Guardar mientras el formulario está incompleto */
+.modal__footer .btn--save:disabled,
+.modal__footer .btn--save:disabled:hover {
+  background: rgb(149, 209, 149);   /* #95D195 */
+  cursor: not-allowed;
 }

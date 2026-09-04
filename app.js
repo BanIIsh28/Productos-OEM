@@ -729,7 +729,7 @@
   }
 
   /* Campo con el desplegable propio del módulo */
-  function selectField(label, span, options) {
+  function selectField(label, span, options, onChange) {
     var wrapper = field(label, span);
 
     var select = el('div', 'select');
@@ -738,7 +738,11 @@
     wrapper.appendChild(select);
 
     /* El desplegable se construye una vez insertado en el documento */
-    wrapper._initSelect = function () { buildSelect(select, CARET_FILTER_SVG); };
+    wrapper._initSelect = function () {
+      buildSelect(select, CARET_FILTER_SVG, function () {
+        if (onChange) { onChange(); }
+      });
+    };
     wrapper._value = function () {
       var span = select.querySelector('.select__trigger span');
       return span ? span.textContent : '';
@@ -764,6 +768,8 @@
       onSelect: function (p) {
         sku._input.value = p.codigo;
         nombreProducto._input.value = p.nombre;
+        tocados.sku = true;
+        revisar();
       }
     });
 
@@ -777,13 +783,18 @@
         });
       },
       label: function (nombre) { return nombre; },
-      onSelect: function (nombre) { proveedor._input.value = nombre; }
+      onSelect: function (nombre) {
+        proveedor._input.value = nombre;
+        tocados.proveedor = true;
+        revisar();
+      }
     });
 
     var codigoExterno = textField('Código externo', 3);
 
     /* Fila 3: alcance, empaque y cantidad */
-    var alcance = selectField('Alcance', 2, ['- Selecciona un alcance -'].concat(ALCANCES));
+    var alcance = selectField('Alcance', 2, ['- Selecciona un alcance -'].concat(ALCANCES),
+      function () { tocados.alcance = true; revisar(); });
     var empaque = textField('Empaque', 2);
     var cantidad = textField('Cantidad', 2);
 
@@ -794,8 +805,69 @@
 
     function marcar(campo, invalido) {
       var control = campo._input || campo.querySelector('.select__trigger');
-      control.classList.toggle('input--invalid', invalido);
+      /* El segundo argumento ha de ser booleano: con undefined, toggle
+         alterna la clase en lugar de fijarla */
+      control.classList.toggle('input--invalid', !!invalido);
     }
+
+    /* Validez de cada campo obligatorio */
+    function estado() {
+      var valorProveedor = proveedor._input.value.trim();
+
+      return {
+        sku: CATALOGO.some(function (p) { return p.codigo === sku._input.value.trim(); }),
+        proveedor: PROVEEDORES.some(function (nombre) {
+          return normalize(nombre) === normalize(valorProveedor);
+        }),
+        codigo: codigoExterno._input.value.trim() !== '',
+        alcance: alcance._value() !== SIN_ALCANCE,
+        empaque: empaque._input.value.trim() !== '',
+        cantidad: cantidad._input.value.trim() !== ''
+      };
+    }
+
+    /* Campos que el usuario ya ha tocado: solo esos se marcan en rojo,
+       para no abrir la ventana con todo el formulario resaltado */
+    var tocados = {};
+
+    function revisar() {
+      var v = estado();
+
+      /* Un campo válido deja de estar marcado; uno tocado e inválido
+         se resalta también en reposo */
+      marcar(sku, tocados.sku && !v.sku);
+      marcar(proveedor, tocados.proveedor && !v.proveedor);
+      marcar(codigoExterno, tocados.codigo && !v.codigo);
+      marcar(alcance, tocados.alcance && !v.alcance);
+      marcar(empaque, tocados.empaque && !v.empaque);
+      marcar(cantidad, tocados.cantidad && !v.cantidad);
+
+      var completo = Object.keys(v).every(function (clave) { return v[clave]; });
+
+      if (botonGuardar) {
+        botonGuardar.disabled = !completo;
+        botonGuardar.title = completo
+          ? 'Guardar la equivalencia'
+          : 'Captura todos los campos para poder guardar';
+      }
+    }
+
+    /* Marca el campo como tocado en cuanto se escribe o se abandona */
+    function vigilar(campo, clave) {
+      var input = campo._input;
+
+      input.addEventListener('input', function () {
+        if (input.value.trim() !== '') { tocados[clave] = true; }
+        revisar();
+      });
+
+      input.addEventListener('blur', function () {
+        tocados[clave] = true;
+        revisar();
+      });
+    }
+
+    var botonGuardar = null;
 
     /* Un código externo con la longitud de un GTIN se considera GS1 */
     function tipoDe(codigo) {
@@ -864,7 +936,7 @@
       return true;
     }
 
-    openModal({
+    var ventana = openModal({
       title: 'Agregar equivalencia',
       body: body,
       buttons: [
@@ -877,6 +949,16 @@
       if (campo._initSelect) { campo._initSelect(); }
     });
 
+    /* Guardar permanece deshabilitado hasta que el formulario esté completo */
+    botonGuardar = ventana.element.querySelector('.btn--save');
+
+    vigilar(sku, 'sku');
+    vigilar(proveedor, 'proveedor');
+    vigilar(codigoExterno, 'codigo');
+    vigilar(empaque, 'empaque');
+    vigilar(cantidad, 'cantidad');
+
+    revisar();
     sku._input.focus();
   }
 
