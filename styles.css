@@ -978,6 +978,13 @@ a:hover { color: rgb(0, 50, 90); }
   transition: background 0.4s ease;
 }
 
+/* Los botones de las ventanas conservan su tamaño al deshabilitarse:
+   la regla general de deshabilitado impone otro relleno */
+.modal__footer .btn:disabled {
+  padding: 7px 16px;
+  border-radius: 4px;
+}
+
 /* Guardar mientras el formulario está incompleto */
 .modal__footer .btn--save:disabled,
 .modal__footer .btn--save:disabled:hover {
