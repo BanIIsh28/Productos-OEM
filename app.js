@@ -70,23 +70,25 @@
     'Fiat Uno 1.4', 'Mitsubishi L200 2.4'
   ];
 
-  /* Cada producto es { codigo, nombre } */
+  /* Cada producto es { codigo, nombre }.
+
+     El catálogo es siempre el mismo: los códigos se derivan de la
+     posición del producto, no del azar, para que un archivo de carga
+     preparado de antemano siga siendo válido en cualquier sesión. */
   var CATALOGO = (function buildCatalog() {
     var productos = [];
-    var usados = {};
 
     FAMILIAS.forEach(function (familia, f) {
       /* Una familia por prefijo: 100xxxx, 101xxxx, ... */
       var prefijo = String(100 + f);
 
-      APLICACIONES.forEach(function (aplicacion) {
-        var codigo;
-        do {
-          codigo = prefijo + randomCode(4);
-        } while (usados[codigo]);
-        usados[codigo] = true;
+      APLICACIONES.forEach(function (aplicacion, i) {
+        var sufijo = String(1000 + ((i * 293 + f * 37) % 9000));
 
-        productos.push({ codigo: codigo, nombre: familia + ' — ' + aplicacion });
+        productos.push({
+          codigo: prefijo + sufijo,
+          nombre: familia + ' — ' + aplicacion
+        });
       });
     });
 
