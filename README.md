@@ -129,7 +129,15 @@ disponible como clase `.input--readonly` para reutilizarlo en otros formularios.
 
 ### Formulario de equivalencia
 
-El botón `Agregar equivalencia +` abre una ventana con este formulario:
+La misma ventana sirve para dar de alta una equivalencia, desde
+`Agregar equivalencia +`, y para editar una existente, desde el botón de lápiz de
+la columna `Acciones`. Al editar llega con los datos del registro cargados, el
+título cambia a `Editar equivalencia` y `Guardar` espera a que se modifique algún
+dato; los cambios se aplican sobre el mismo registro, que queda resaltado unos
+segundos. El estatus no se toca desde aquí: se cambia con el interruptor de la
+tabla.
+
+El formulario es:
 
 | Fila | Campos |
 | --- | --- |
@@ -144,7 +152,9 @@ llenan el código y el nombre. `Proveedor` funciona igual sobre los nombres de
 proveedores. `Alcance` arranca en `- Selecciona un alcance -`.
 
 El catálogo se inventa al cargar la vista: 30 familias de refacción por 30
-aplicaciones, 900 productos con código de 7 dígitos agrupados por familia.
+aplicaciones, 900 productos con código de 7 dígitos agrupados por familia. Los
+registros de la tabla toman su SKU de ese catálogo, de modo que al editar uno se
+pueda resolver el nombre de su producto.
 
 `Guardar` permanece deshabilitado, en un verde más claro (`#95D195`), mientras el
 formulario esté incompleto, y toma su color pleno al quedar todo capturado. Un

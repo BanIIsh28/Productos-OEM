@@ -111,13 +111,16 @@
     return code;
   }
 
-  /* Cada fila es [SKU, proveedor, tipo, código, alcance, empaque, cantidad, activo] */
+  /* Cada fila es [SKU, proveedor, tipo, código, alcance, empaque, cantidad, activo].
+     El SKU corresponde a un producto del catálogo, de modo que al editar
+     un registro se pueda resolver el nombre del producto. */
   var dataRows = (function buildRows() {
     var rows = [];
     var usados = {};
 
     while (rows.length < 182) {
-      var sku = randomCode(7);
+      var producto = pick(CATALOGO);
+      var sku = producto.codigo;
       if (usados[sku]) { continue; }
       usados[sku] = true;
 
@@ -240,9 +243,9 @@
   var page = 1;
   var pageSize = 25;
 
-  /* Registro recién agregado, resaltado durante unos segundos */
-  var nuevoRegistro = null;
-  var nuevoTimer = null;
+  /* Registro recién agregado o editado, resaltado unos segundos */
+  var resaltado = null;
+  var resaltadoTimer = null;
 
   function totalPages() {
     return Math.max(1, Math.ceil(filteredRows().length / pageSize));
@@ -356,6 +359,7 @@
     btn.title = 'Editar';
     btn.setAttribute('aria-label', 'Editar el SKU ' + row[COL_SKU]);
     btn.insertAdjacentHTML('beforeend', PENCIL_SVG);
+    btn.addEventListener('click', function () { openEquivalenceModal(row); });
     return btn;
   }
 
@@ -381,7 +385,7 @@
 
     rows.forEach(function (row, i) {
       var rowClass = i % 2 === 0 ? 'row--even' : 'row--odd';
-      if (row === nuevoRegistro) { rowClass += ' row--new'; }
+      if (row === resaltado) { rowClass += ' row--new'; }
 
       columns.forEach(function (col, index) {
         var td = el('div', 'td ' + rowClass);
@@ -634,6 +638,7 @@
 
     var input = el('input');
     input.type = 'text';
+    if (opts.value) { input.value = opts.value; }
     if (opts.placeholder) { input.placeholder = opts.placeholder; }
     if (opts.readOnly) {
       input.readOnly = true;
@@ -665,6 +670,7 @@
     var input = el('input');
     input.type = 'text';
     input.autocomplete = 'off';
+    if (config.value) { input.value = config.value; }
     if (config.placeholder) { input.placeholder = config.placeholder; }
     if (config.digitsOnly) { input.inputMode = 'numeric'; }
 
@@ -729,7 +735,7 @@
   }
 
   /* Campo con el desplegable propio del módulo */
-  function selectField(label, span, options, onChange) {
+  function selectField(label, span, options, onChange, selected) {
     var wrapper = field(label, span);
 
     var select = el('div', 'select');
@@ -741,7 +747,7 @@
     wrapper._initSelect = function () {
       buildSelect(select, CARET_FILTER_SVG, function () {
         if (onChange) { onChange(); }
-      });
+      }, selected);
     };
     wrapper._value = function () {
       var span = select.querySelector('.select__trigger span');
@@ -750,11 +756,24 @@
     return wrapper;
   }
 
-  function openEquivalenceModal() {
+  /* Nombre del producto correspondiente a un código del catálogo */
+  function productoDe(codigo) {
+    var encontrado = CATALOGO.filter(function (p) { return p.codigo === codigo; })[0];
+    return encontrado ? encontrado.nombre : '';
+  }
+
+  /**
+   * Abre la ventana de equivalencia.
+   * @param {Array} [registro] fila de la tabla a editar; sin ella, se
+   *                           captura una equivalencia nueva
+   */
+  function openEquivalenceModal(registro) {
+    var editando = !!registro;
     var body = el('div', 'form-grid');
 
     /* Fila 1: código de producto y su nombre */
     var nombreProducto = textField('Nombre del producto', 4, { readOnly: true });
+    if (editando) { nombreProducto._input.value = productoDe(registro[COL_SKU]); }
 
     var sku = suggestField('SKU', 2, {
       digitsOnly: true,
@@ -765,6 +784,7 @@
         });
       },
       label: function (p) { return p.codigo + '  ' + p.nombre; },
+      value: editando ? registro[COL_SKU] : '',
       onSelect: function (p) {
         sku._input.value = p.codigo;
         nombreProducto._input.value = p.nombre;
@@ -783,6 +803,7 @@
         });
       },
       label: function (nombre) { return nombre; },
+      value: editando ? registro[1] : '',
       onSelect: function (nombre) {
         proveedor._input.value = nombre;
         tocados.proveedor = true;
@@ -790,13 +811,16 @@
       }
     });
 
-    var codigoExterno = textField('Código externo', 3);
+    var codigoExterno = textField('Código externo', 3,
+      editando ? { value: registro[3] } : null);
 
     /* Fila 3: alcance, empaque y cantidad */
     var alcance = selectField('Alcance', 2, ['- Selecciona un alcance -'].concat(ALCANCES),
-      function () { tocados.alcance = true; revisar(); });
-    var empaque = textField('Empaque', 2);
-    var cantidad = textField('Cantidad', 2);
+      function () { tocados.alcance = true; revisar(); },
+      editando ? registro[COL_ALCANCE] : null);
+
+    var empaque = textField('Empaque', 2, editando ? { value: registro[5] } : null);
+    var cantidad = textField('Cantidad', 2, editando ? { value: registro[6] } : null);
 
     var campos = [sku, nombreProducto, proveedor, codigoExterno, alcance, empaque, cantidad];
     campos.forEach(function (campo) { body.appendChild(campo); });
@@ -844,11 +868,21 @@
 
       var completo = Object.keys(v).every(function (clave) { return v[clave]; });
 
+      /* Al editar no hay nada que guardar si no se ha cambiado nada */
+      var conCambios = !editando || [
+        sku._input.value.trim() !== registro[COL_SKU],
+        normalize(proveedor._input.value.trim()) !== normalize(registro[1]),
+        codigoExterno._input.value.trim() !== registro[3],
+        alcance._value() !== registro[COL_ALCANCE],
+        empaque._input.value.trim() !== registro[5],
+        cantidad._input.value.trim() !== registro[6]
+      ].some(Boolean);
+
       if (botonGuardar) {
-        botonGuardar.disabled = !completo;
-        botonGuardar.title = completo
-          ? 'Guardar la equivalencia'
-          : 'Captura todos los campos para poder guardar';
+        botonGuardar.disabled = !completo || !conCambios;
+        botonGuardar.title = !completo
+          ? 'Captura todos los campos para poder guardar'
+          : (conCambios ? 'Guardar los cambios' : 'Modifica algún dato para poder guardar');
       }
     }
 
@@ -922,22 +956,35 @@
         return normalize(nombre) === normalize(valores.proveedor);
       })[0];
 
-      addEquivalence([
-        valores.sku,
-        proveedorCatalogo,
-        tipoDe(valores.codigo),
-        valores.codigo,
-        valores.alcance,
-        valores.empaque,
-        valores.cantidad,
-        true            /* los registros nuevos entran activos */
-      ]);
+      if (editando) {
+        updateEquivalence(registro, [
+          valores.sku,
+          proveedorCatalogo,
+          tipoDe(valores.codigo),
+          valores.codigo,
+          valores.alcance,
+          valores.empaque,
+          valores.cantidad,
+          registro[COL_ESTATUS]   /* el estatus se cambia desde la tabla */
+        ]);
+      } else {
+        addEquivalence([
+          valores.sku,
+          proveedorCatalogo,
+          tipoDe(valores.codigo),
+          valores.codigo,
+          valores.alcance,
+          valores.empaque,
+          valores.cantidad,
+          true            /* los registros nuevos entran activos */
+        ]);
+      }
 
       return true;
     }
 
     var ventana = openModal({
-      title: 'Agregar equivalencia',
+      title: editando ? 'Editar equivalencia' : 'Agregar equivalencia',
       body: body,
       buttons: [
         { label: 'Cancelar', variant: 'cancel' },
@@ -965,7 +1012,7 @@
   /* Añade la equivalencia a la tabla y la deja a la vista */
   function addEquivalence(row) {
     dataRows.unshift(row);
-    nuevoRegistro = row;
+    resaltado = row;
 
     /* Se retira el orden para que el registro quede al principio */
     sort.index = null;
@@ -983,9 +1030,31 @@
         ', aunque no se muestra con los filtros aplicados', visible ? 'success' : 'warning');
 
     /* El resaltado dura lo mismo que el aviso */
-    clearTimeout(nuevoTimer);
-    nuevoTimer = setTimeout(function () {
-      nuevoRegistro = null;
+    clearTimeout(resaltadoTimer);
+    resaltadoTimer = setTimeout(function () {
+      resaltado = null;
+      renderRows();
+    }, 4000);
+  }
+
+  /* Sustituye los datos del registro y lo deja a la vista */
+  function updateEquivalence(registro, valores) {
+    valores.forEach(function (valor, index) { registro[index] = valor; });
+
+    resaltado = registro;
+    renderPagination();
+    renderRows();
+
+    var visible = filteredRows().indexOf(registro) !== -1;
+
+    showToast(visible
+      ? 'Se actualizó la equivalencia del SKU ' + registro[COL_SKU]
+      : 'Se actualizó la equivalencia del SKU ' + registro[COL_SKU] +
+        ', aunque ya no se muestra con los filtros aplicados', visible ? 'success' : 'warning');
+
+    clearTimeout(resaltadoTimer);
+    resaltadoTimer = setTimeout(function () {
+      resaltado = null;
       renderRows();
     }, 4000);
   }
@@ -1018,15 +1087,16 @@
   function bindFilters() {
     document.getElementById('btnFiltrar')
       .addEventListener('click', applyTopFilters);
+    /* Se envuelve para que el evento del clic no llegue como registro */
     document.getElementById('btnEquivalencia')
-      .addEventListener('click', openEquivalenceModal);
+      .addEventListener('click', function () { openEquivalenceModal(); });
   }
 
   /* ---------- Selects interactivos ---------- */
 
-  function buildSelect(root, caretSvg, onSelect) {
+  function buildSelect(root, caretSvg, onSelect, initial) {
     var options = root.getAttribute('data-options').split('|');
-    var selected = 0;
+    var selected = initial ? Math.max(options.indexOf(initial), 0) : 0;
 
     var trigger = el('button', 'select__trigger');
     trigger.type = 'button';
@@ -1034,7 +1104,7 @@
     trigger.setAttribute('aria-expanded', 'false');
 
     var value = el('span');
-    value.textContent = options[0];
+    value.textContent = options[selected];
     trigger.appendChild(value);
     trigger.insertAdjacentHTML('beforeend', caretSvg);
 
