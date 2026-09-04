@@ -765,9 +765,10 @@ a:hover { color: rgb(0, 50, 90); }
   background: rgba(0, 0, 0, 0.5);   /* #000000 al 50% */
   display: flex;
   justify-content: center;
-  align-items: center;
-  /* El pie mayor que la cabecera deja la ventana por encima del centro */
-  padding: 24px 24px calc(12vh + 130px);
+  /* Anclada por arriba: todas las ventanas abren a la misma altura,
+     sea cual sea su contenido */
+  align-items: flex-start;
+  padding: clamp(60px, 16vh, 220px) 24px 40px;
   overflow-y: auto;
   z-index: 300;
 }
@@ -995,9 +996,9 @@ a:hover { color: rgb(0, 50, 90); }
 /* ---------- Ventana de solo texto ---------- */
 
 .modal-message {
-  /* Reserva el mismo aire que un formulario, para que las ventanas
-     de pregunta guarden las proporciones del resto */
-  min-height: 120px;
+  /* Aire suficiente para separar el texto del pie, sin dejar hueco
+     de más */
+  min-height: 52px;
 }
 
 .modal-message__text {

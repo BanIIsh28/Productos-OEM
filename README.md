@@ -108,7 +108,8 @@ propio contenedor.
 
 `openModal({ title, body, buttons, onClose })` abre una ventana superpuesta a
 toda la vista, sobre un fondo `#000000` al 50% de opacidad, centrada
-horizontalmente y algo por encima del centro vertical.
+horizontalmente y anclada por su borde superior, de modo que todas abran a la
+misma altura sea cual sea su contenido.
 
 La cabecera es azul con el título y una `X` de cierre; el cuerpo recibe el
 contenido que se le pase y el pie coloca los botones a la derecha, con las
