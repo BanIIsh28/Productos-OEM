@@ -905,10 +905,12 @@
   }
 
   /* Plantilla de carga: encabezados y una fila de ejemplo */
-  /* Plantilla: un GS1 con dígito verificador correcto, para que la fila
-     de ejemplo pase la propia verificación del módulo */
+  /* Plantilla: la fila de ejemplo pasa la propia verificación del
+     módulo —SKU del catálogo, proveedor registrado, GTIN con dígito
+     verificador correcto y destino conforme—, de modo que descargarla e
+     importarla tal cual funcione sin retocar nada. */
   var TEMPLATE_ROW = [
-    '1234567', 'Nombre del proveedor', 'GS1', '07501234567893',
+    '1001000', 'Robert Bosch México', 'GS1', '07501234567893',
     'Presentación', 'Caja máster', '12', 'Activo'
   ];
 

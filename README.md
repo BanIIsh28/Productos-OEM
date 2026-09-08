@@ -84,7 +84,10 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
 - **Descargar plantilla**: el botón `Descargar plantilla` descarga
   `Plantilla-Productos-OEM.xlsx`, un archivo con los mismos encabezados y una
   fila de ejemplo, pensado para llenar y volver a cargar con `Importar`. Es
-  siempre idéntico, sin importar los filtros activos.
+  siempre idéntico, sin importar los filtros activos. La fila de ejemplo pasa la
+  propia verificación del módulo —SKU del catálogo, proveedor registrado, GTIN
+  con dígito verificador correcto y destino conforme—, así que descargarla e
+  importarla tal cual da un registro correcto sin retocar nada.
 
 ## Mensajes toast
 
