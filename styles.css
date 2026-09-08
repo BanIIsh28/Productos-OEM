@@ -891,6 +891,7 @@ a:hover { color: rgb(0, 50, 90); }
 .field--span2 { grid-column: span 2; }
 .field--span3 { grid-column: span 3; }
 .field--span4 { grid-column: span 4; }
+.field--span6 { grid-column: span 6; }
 
 .field {
   display: flex;

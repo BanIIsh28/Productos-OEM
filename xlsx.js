@@ -145,7 +145,10 @@
       escapeXml(value) + '</t></is></c>';
   }
 
-  function sheetXml(headers, rows, widths) {
+  function sheetXml(headers, rows, widths, textColumns) {
+    var comoTexto = {};
+    (textColumns || []).forEach(function (i) { comoTexto[i] = true; });
+
     var xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
 
@@ -167,8 +170,12 @@
       var rowNumber = r + 2;
       xml += '<row r="' + rowNumber + '">';
       cells.forEach(function (value, i) {
-        /* Los valores puramente numéricos se escriben como número */
-        var numeric = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+        /* Los valores puramente numéricos se escriben como número, salvo
+           las columnas declaradas de texto: ahí el valor es un código y
+           convertirlo perdería los ceros a la izquierda. */
+        var numeric = !comoTexto[i] && typeof value === 'string' && /^\d+$/.test(value)
+          ? Number(value)
+          : value;
         xml += cell(columnLetter(i) + rowNumber, numeric, 0);
       });
       xml += '</row>';
@@ -202,7 +209,9 @@
 
   /**
    * Construye un Blob .xlsx de una sola hoja.
-   * @param {Object} options - { sheetName, headers, rows, widths }
+   * @param {Object} options - { sheetName, headers, rows, widths, textColumns }
+   *   textColumns: índices de columna que se emiten siempre como texto,
+   *   para los valores que son códigos y no cantidades.
    */
   function buildXlsx(options) {
     var sheetName = escapeXml(options.sheetName || 'Hoja1').slice(0, 31);
@@ -245,7 +254,8 @@
       { name: 'xl/styles.xml', content: STYLES_XML },
       {
         name: 'xl/worksheets/sheet1.xml',
-        content: sheetXml(options.headers || [], options.rows || [], options.widths)
+        content: sheetXml(options.headers || [], options.rows || [], options.widths,
+          options.textColumns)
       }
     ]);
   }

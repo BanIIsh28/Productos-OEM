@@ -11,6 +11,11 @@ Cinco registros válidos, que además cubren los dos casos del destino
 con esas dos celdas vacías, para ver cómo se completan solas— y tres de alcance
 `Presentación`, con `Inner`, `Caja máster` y `Pallet`.
 
+También cubren las dos clases de código: tres `GS1` con dígito verificador
+correcto —uno de 13 dígitos, el mismo de 14 con su cero a la izquierda y uno de
+12— y dos `No GS1` con código propietario. Los `GS1` se cargan en su forma
+canónica de 14 posiciones.
+
 Los SKU corresponden a productos del catálogo del módulo y los proveedores a
 nombres de su lista:
 
@@ -31,5 +36,5 @@ Cinco registros con un problema distinto cada uno, para probar la verificación:
 | 2 | `SKU` vacío |
 | 3 | `SKU` 9999999, que no existe en el catálogo |
 | 4 | Proveedor que no está en la lista |
-| 5 | Alcance `Presentación` con `Empaque` en `Unidad`, que ahí no se admite, y `Cantidad` decimal (`2.5`) |
-| 6 | `Alcance` con un valor ajeno (`Surtido`), `Cantidad` no numérica (`doce`) y `Estatus` desconocido (`Suspendido`) |
+| 5 | `Tipo` `GS1` con dígito verificador inválido (`7501234567899`), `Empaque` en `Unidad` con alcance `Presentación` y `Cantidad` decimal (`2.5`) |
+| 6 | `Tipo` `GS1` con la etiqueta completa en vez del GTIN (`(01)07501234567893`), `Alcance` ajeno (`Surtido`), `Cantidad` no numérica (`doce`) y `Estatus` desconocido (`Suspendido`) |

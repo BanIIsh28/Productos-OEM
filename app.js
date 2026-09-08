@@ -97,6 +97,115 @@
   })();
 
   var TIPOS = ['GS1', 'No GS1'];
+
+  /* ---------- Códigos externos (CF-51779 / ERB-51772) ----------
+
+     El tipo lo afirma quien captura: nunca se deduce del patrón ni de
+     la longitud del código. Si alguien declara "GS1" y el código no
+     cumple la norma, es un error de captura que hay que reportar, no
+     un motivo para reclasificar el registro en silencio como "No GS1".
+
+     El código se maneja siempre como texto. No se convierte a número en
+     ningún punto: hacerlo perdería los ceros a la izquierda y, con
+     códigos largos, acabaría en notación científica. */
+
+  var LONGITUDES_GTIN = [8, 12, 13, 14];
+
+  /* Dígito verificador GS1: suma ponderada del cuerpo con pesos
+     alternos 3 y 1, empezando con 3 en el dígito inmediatamente a la
+     izquierda del verificador. No es Luhn, que alterna 2 y 1 y arrastra
+     los productos de dos cifras. */
+  function digitoVerificadorGs1(cuerpo) {
+    var suma = 0;
+
+    for (var i = 0; i < cuerpo.length; i++) {
+      var digito = Number(cuerpo.charAt(cuerpo.length - 1 - i));
+      suma += digito * (i % 2 === 0 ? 3 : 1);
+    }
+
+    return (10 - (suma % 10)) % 10;
+  }
+
+  /* Motivo por el que un código declarado como GS1 no sirve, o null si
+     está correcto. */
+  function errorGs1(codigo) {
+    var valor = String(codigo === undefined || codigo === null ? '' : codigo).trim();
+
+    if (valor === '') { return 'El código externo está vacío'; }
+
+    /* Etiqueta GS1-128 con identificadores de aplicación: "(01)7501..." */
+    if (/[()]/.test(valor)) {
+      return 'Captura solo el GTIN, sin los identificadores de aplicación de la etiqueta';
+    }
+
+    if (!/^\d+$/.test(valor)) {
+      return 'El código GS1 debe contener solo dígitos';
+    }
+
+    /* SSCC (AI 00): 18 dígitos que identifican una unidad logística,
+       no un producto */
+    if (valor.length === 18) {
+      return 'El código capturado es un SSCC de 18 dígitos, no un GTIN';
+    }
+
+    /* Cadena GS1-128 sin paréntesis: el AI 01 seguido del GTIN y más datos */
+    if (valor.length > 14 && valor.slice(0, 2) === '01') {
+      return 'Captura solo el GTIN, no la cadena completa de la etiqueta';
+    }
+
+    if (LONGITUDES_GTIN.indexOf(valor.length) === -1) {
+      return 'El código no es un GS1 válido: longitud inválida ' +
+        '(se esperan 8, 12, 13 o 14 dígitos)';
+    }
+
+    if (digitoVerificadorGs1(valor.slice(0, -1)) !== Number(valor.slice(-1))) {
+      return 'El código no es un GS1 válido: dígito verificador incorrecto';
+    }
+
+    return null;
+  }
+
+  /* Forma canónica de un GTIN: 14 posiciones, rellenando con ceros a la
+     izquierda. Solo rellena, nunca recorta: "7501234567893" y
+     "07501234567893" son el mismo código, mientras que
+     "17501234567890" es otro —su primer dígito es el indicador de
+     nivel de empaque—. */
+  function normalizarGtin(codigo) {
+    var valor = String(codigo === undefined || codigo === null ? '' : codigo).trim();
+
+    while (valor.length < 14) { valor = '0' + valor; }
+    return valor;
+  }
+
+  /* Motivo por el que un código propietario no sirve, o null.
+
+     TODO: la normalización exacta de los códigos No GS1 está pendiente
+     de confirmar con negocio —queda por revisar el anexo "Códigos
+     propietarios (NO_GS1): normalización y casos de prueba"—. Hasta
+     entonces solo se exige que no esté vacío: se trata como texto y no
+     se le aplica ninguna validación de dígito verificador. */
+  function errorNoGs1(codigo) {
+    var valor = String(codigo === undefined || codigo === null ? '' : codigo).trim();
+    return valor === '' ? 'El código externo está vacío' : null;
+  }
+
+  /* Revisa el código contra el tipo declarado. Sin un tipo utilizable
+     solo se puede exigir que no esté vacío. */
+  function errorCodigoExterno(codigo, tipoDeclarado) {
+    if (tipoDeclarado === 'GS1') { return errorGs1(codigo); }
+    if (tipoDeclarado === 'No GS1') { return errorNoGs1(codigo); }
+
+    return String(codigo === undefined || codigo === null ? '' : codigo).trim() === ''
+      ? 'El código externo está vacío'
+      : null;
+  }
+
+  /* Valor con el que se guarda el código: el GTIN en su forma canónica
+     cuando el tipo es GS1, y el texto tal cual cuando es propietario */
+  function codigoCanonico(codigo, tipoDeclarado) {
+    var valor = String(codigo === undefined || codigo === null ? '' : codigo).trim();
+    return tipoDeclarado === 'GS1' ? normalizarGtin(valor) : valor;
+  }
   var ALCANCES = ['Producto', 'Presentación'];
 
   /* ---------- Destino APYMSA (RD-MOD-01) ----------
@@ -138,6 +247,26 @@
     return code;
   }
 
+  /* GTIN-14 con su dígito verificador correcto, en forma canónica. El
+     primer dígito es el indicador de nivel de empaque. */
+  function randomGtin() {
+    var cuerpo = String(randomInt(0, 3));
+    for (var i = 1; i < 13; i++) { cuerpo += String(randomInt(0, 9)); }
+    return cuerpo + String(digitoVerificadorGs1(cuerpo));
+  }
+
+  /* Código propietario: no es un GTIN y no lleva verificador */
+  var PREFIJOS_PROPIOS = ['AP', 'RF', 'MX', 'TC', 'NGK', 'DEN'];
+
+  function randomCodigoPropio() {
+    return pick(PREFIJOS_PROPIOS) + '-' + randomCode(6);
+  }
+
+  /* El código que corresponde a un tipo declarado */
+  function randomCodigoDe(tipo) {
+    return tipo === 'GS1' ? randomGtin() : randomCodigoPropio();
+  }
+
   /* Cada fila es [SKU, proveedor, tipo, código, alcance, empaque, cantidad, activo].
      El SKU corresponde a un producto del catálogo, de modo que al editar
      un registro se pueda resolver el nombre del producto. */
@@ -156,11 +285,15 @@
       var alcance = pick(ALCANCES);
       var producto = esAlcanceProducto(alcance);
 
+      /* El código se genera según el tipo declarado: un GTIN válido si
+         es GS1, un código propietario si no */
+      var tipo = pick(TIPOS);
+
       rows.push([
         sku,
         pick(PROVEEDORES),
-        pick(TIPOS),
-        randomCode(12),
+        tipo,
+        randomCodigoDe(tipo),
         alcance,
         producto ? NIVEL_UNIDAD : pick(NIVELES_EMPAQUE),
         producto ? CANTIDAD_UNIDAD : String(randomInt(2, 20)),
@@ -298,7 +431,7 @@
 
         var indice = pick(editables);
         var previo = indice === COL_PROVEEDOR ? pick(PROVEEDORES)
-          : indice === 3 ? randomCode(12)
+          : indice === 3 ? randomCodigoDe(row[COL_TIPO])
           : indice === 5 ? pick(NIVELES_EMPAQUE)
           : String(randomInt(2, 20));
 
@@ -696,7 +829,11 @@
   /* ---------- Exportar a Excel ---------- */
 
   /* Ancho aproximado de cada columna en la hoja de cálculo */
-  var SHEET_WIDTHS = [12, 32, 10, 18, 16, 14, 11, 11];
+  var SHEET_WIDTHS = [12, 32, 10, 20, 16, 14, 11, 11];
+
+  /* El código externo se emite siempre como texto: es un código, no una
+     cantidad, y como número perdería sus ceros a la izquierda */
+  var SHEET_TEXT_COLUMNS = [3];
 
   function timestamp() {
     var now = new Date();
@@ -748,7 +885,8 @@
       sheetName: 'Productos OEM',
       headers: headerLabels(),
       rows: rows.map(sheetRow),
-      widths: SHEET_WIDTHS
+      widths: SHEET_WIDTHS,
+      textColumns: SHEET_TEXT_COLUMNS
     }), name);
 
     showToast('Se descargó ' + name + ' con ' + rows.length +
@@ -756,8 +894,10 @@
   }
 
   /* Plantilla de carga: encabezados y una fila de ejemplo */
+  /* Plantilla: un GS1 con dígito verificador correcto, para que la fila
+     de ejemplo pase la propia verificación del módulo */
   var TEMPLATE_ROW = [
-    '1234567', 'Nombre del proveedor', 'GS1', '123456789012',
+    '1234567', 'Nombre del proveedor', 'GS1', '07501234567893',
     'Presentación', 'Caja máster', '12', 'Activo'
   ];
 
@@ -768,7 +908,8 @@
       sheetName: 'Plantilla',
       headers: headerLabels(),
       rows: [TEMPLATE_ROW],
-      widths: SHEET_WIDTHS
+      widths: SHEET_WIDTHS,
+      textColumns: SHEET_TEXT_COLUMNS
     }), name);
 
     showToast('Se descargó ' + name + ' con los encabezados y una fila de ejemplo', 'success');
@@ -859,8 +1000,24 @@
       fallo(2, 'El tipo debe ser GS1 o No GS1');
     }
 
-    /* Código externo */
-    if (!valores[3]) { fallo(3, 'El código externo está vacío'); }
+    /* Código externo: se valida con la norma del tipo declarado en el
+       archivo, igual que en el alta manual. Un código GS1 correcto se
+       guarda en su forma canónica de 14 posiciones. */
+    if (!valores[3]) {
+      fallo(3, 'El código externo está vacío');
+    } else if (valores[2] === 'GS1') {
+      var motivoGs1 = errorGs1(valores[3]);
+
+      if (motivoGs1) {
+        fallo(3, motivoGs1 === 'El código no es un GS1 válido: dígito verificador incorrecto'
+          ? 'El código GS1 tiene un dígito verificador inválido'
+          : motivoGs1);
+      } else {
+        valores[3] = normalizarGtin(valores[3]);
+      }
+    }
+    /* TODO: para los códigos No GS1 solo se exige que no estén vacíos;
+       su normalización está pendiente de confirmar con negocio. */
 
     /* Alcance */
     if (!valores[4]) {
@@ -1516,8 +1673,8 @@
       }
     });
 
-    /* Fila 2: proveedor y código externo */
-    var proveedor = suggestField('Proveedor', 3, {
+    /* Fila 2: proveedor */
+    var proveedor = suggestField('Proveedor', 6, {
       placeholder: 'Nombre del proveedor',
       search: function (texto) {
         var buscado = normalize(texto);
@@ -1534,8 +1691,24 @@
       }
     });
 
-    var codigoExterno = textField('Código externo', 3,
+    /* Fila 3: el tipo y el código externo. Van juntos porque el tipo
+       declarado decide con qué norma se valida el código. */
+    var SIN_TIPO = '- Selecciona un tipo -';
+
+    var tipo = selectField('Tipo', 2, [SIN_TIPO].concat(TIPOS),
+      function () {
+        tocados.tipo = true;
+        tipoDeclarado = true;   /* deja de sugerirse: manda el usuario */
+        revisar();
+      },
+      editando ? registro[COL_TIPO] : null);
+
+    var codigoExterno = textField('Código externo', 4,
       editando ? { value: registro[3] } : null);
+
+    /* Con un registro existente el tipo ya viene afirmado: no se
+       sobrescribe con la sugerencia al reeditar el código */
+    var tipoDeclarado = editando;
 
     /* Fila 3: el destino —alcance, nivel de empaque y cantidad— */
     var SIN_ALCANCE = '- Selecciona un alcance -';
@@ -1569,10 +1742,21 @@
       cantidad: editando && !deProducto ? registro[6] : ''
     };
 
-    var campos = [sku, nombreProducto, proveedor, codigoExterno, alcance, empaque, cantidad];
+    var campos = [sku, nombreProducto, proveedor, tipo, codigoExterno,
+      alcance, empaque, cantidad];
     campos.forEach(function (campo) { body.appendChild(campo); });
 
     function esProducto() { return esAlcanceProducto(alcance._value()); }
+
+    /* Motivo por el que el código no sirve para el tipo declarado */
+    function errorCodigo() {
+      return errorCodigoExterno(codigoExterno._input.value, tipo._value());
+    }
+
+    /* Valor con el que se guardaría el código */
+    function codigoAGuardar() {
+      return codigoCanonico(codigoExterno._input.value, tipo._value());
+    }
 
     /* Valores con los que se guardaría el destino: implícitos cuando el
        alcance es "Producto", capturados cuando es "Presentación" */
@@ -1623,7 +1807,9 @@
         proveedor: PROVEEDORES.some(function (nombre) {
           return normalize(nombre) === normalize(valorProveedor);
         }),
-        codigo: codigoExterno._input.value.trim() !== '',
+        tipo: tipo._value() !== SIN_TIPO,
+        /* El código se valida con la norma del tipo declarado */
+        codigo: errorCodigo() === null,
         alcance: alcance._value() !== SIN_ALCANCE,
         /* Con "Producto" el destino es implícito: no se le exige nada
            al usuario. Con "Presentación" hay que declararlo. */
@@ -1643,6 +1829,7 @@
          se resalta también en reposo */
       marcar(sku, tocados.sku && !v.sku);
       marcar(proveedor, tocados.proveedor && !v.proveedor);
+      marcar(tipo, tocados.tipo && !v.tipo);
       marcar(codigoExterno, tocados.codigo && !v.codigo);
       marcar(alcance, tocados.alcance && !v.alcance);
       marcar(empaque, tocados.empaque && !v.empaque);
@@ -1658,7 +1845,8 @@
       var conCambios = !editando || [
         sku._input.value.trim() !== registro[COL_SKU],
         normalize(proveedor._input.value.trim()) !== normalize(registro[1]),
-        codigoExterno._input.value.trim() !== registro[3],
+        tipo._value() !== registro[COL_TIPO],
+        codigoAGuardar() !== registro[3],
         alcance._value() !== registro[COL_ALCANCE],
         destino.empaque !== registro[5],
         destino.cantidad !== registro[6]
@@ -1689,8 +1877,10 @@
 
     var botonGuardar = null;
 
-    /* Un código externo con la longitud de un GTIN se considera GS1 */
-    function tipoDe(codigo) {
+    /* Sugerencia por el aspecto del código, nada más: se usa para
+       preseleccionar el tipo mientras nadie lo haya declarado. El valor
+       que se guarda es siempre el que quede elegido en el campo. */
+    function tipoSugerido(codigo) {
       return /^\d{8}$|^\d{12,14}$/.test(codigo) ? 'GS1' : 'No GS1';
     }
 
@@ -1701,7 +1891,8 @@
         sku: sku._input.value.trim(),
         producto: nombreProducto._input.value.trim(),
         proveedor: proveedor._input.value.trim(),
-        codigo: codigoExterno._input.value.trim(),
+        tipo: tipo._value(),
+        codigo: codigoAGuardar(),
         alcance: alcance._value(),
         empaque: destino.empaque,
         cantidad: destino.cantidad
@@ -1722,31 +1913,51 @@
       var empaqueValido = fijo || nivelValido(valores.empaque);
       var cantidadOk = fijo || cantidadValida(valores.cantidad);
 
+      /* 'faltantes' son los campos sin capturar; 'problemas', los que
+         traen algo que no cumple su regla y merecen un mensaje propio */
       var faltantes = [];
+      var problemas = [];
+
+      var motivoCodigo = errorCodigo();
+      var codigoVacio = codigoExterno._input.value.trim() === '';
 
       if (!producto) { faltantes.push('SKU'); }
       if (!proveedorValido) { faltantes.push('Proveedor'); }
-      if (!valores.codigo) { faltantes.push('Código externo'); }
+      if (valores.tipo === SIN_TIPO) { faltantes.push('Tipo'); }
       if (valores.alcance === SIN_ALCANCE) { faltantes.push('Alcance'); }
       if (!empaqueValido) { faltantes.push('Nivel de empaque'); }
+      if (!cantidadOk && valores.cantidad === '') { faltantes.push('Cantidad'); }
 
-      if (!cantidadOk) {
-        faltantes.push(valores.cantidad === ''
-          ? 'Cantidad'
-          : 'Cantidad debe ser un número entero mayor o igual a 1');
+      if (codigoVacio) {
+        faltantes.push('Código externo');
+      } else if (motivoCodigo) {
+        problemas.push(motivoCodigo);
+      }
+
+      if (!cantidadOk && valores.cantidad !== '') {
+        problemas.push('La cantidad debe ser un número entero mayor o igual a 1');
       }
 
       marcar(sku, !producto);
       marcar(proveedor, !proveedorValido);
-      marcar(codigoExterno, !valores.codigo);
+      marcar(tipo, valores.tipo === SIN_TIPO);
+      marcar(codigoExterno, !!motivoCodigo);
       marcar(alcance, valores.alcance === SIN_ALCANCE);
       marcar(empaque, !empaqueValido);
       marcar(cantidad, !cantidadOk);
 
-      if (faltantes.length) {
-        showToast(faltantes.length === 1
-          ? 'Falta capturar ' + faltantes[0]
-          : 'Faltan datos por capturar: ' + faltantes.join(', '), 'error');
+      if (faltantes.length || problemas.length) {
+        var partes = [];
+
+        if (faltantes.length) {
+          partes.push(faltantes.length === 1
+            ? 'Falta capturar ' + faltantes[0]
+            : 'Faltan datos por capturar: ' + faltantes.join(', '));
+        }
+
+        partes = partes.concat(problemas);
+
+        showToast(partes.join('. '), 'error');
         return false;   /* la ventana permanece abierta */
       }
 
@@ -1759,7 +1970,7 @@
         updateEquivalence(registro, [
           valores.sku,
           proveedorCatalogo,
-          tipoDe(valores.codigo),
+          valores.tipo,
           valores.codigo,
           valores.alcance,
           valores.empaque,
@@ -1770,7 +1981,7 @@
         addEquivalence([
           valores.sku,
           proveedorCatalogo,
-          tipoDe(valores.codigo),
+          valores.tipo,
           valores.codigo,
           valores.alcance,
           valores.empaque,
@@ -1802,6 +2013,20 @@
     vigilar(proveedor, 'proveedor');
     vigilar(codigoExterno, 'codigo');
     vigilar(cantidad, 'cantidad');
+
+    /* Mientras nadie haya declarado el tipo, escribir el código lo
+       preselecciona. En cuanto el usuario lo elige a mano deja de
+       sugerirse, y en todo caso el valor guardado es el del campo. */
+    codigoExterno._input.addEventListener('input', function () {
+      if (tipoDeclarado) { return; }
+
+      var capturado = codigoExterno._input.value.trim();
+      /* Sin código no hay nada que sugerir: el tipo sigue por declarar */
+      var sugerido = capturado === '' ? SIN_TIPO : tipoSugerido(capturado);
+
+      if (tipo._value() !== sugerido) { tipo._display(sugerido); }
+      revisar();
+    });
 
     /* Lo capturado en cantidad se recuerda para cuando el alcance
        vuelva a "Presentación" */

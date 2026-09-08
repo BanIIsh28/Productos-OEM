@@ -24,7 +24,7 @@ componentes e iconografía).
 | SKU | código de 7 dígitos |
 | Proveedor | nombre de distribuidor de autopartes |
 | Tipo | `GS1` o `No GS1` |
-| Código externo | código de 12 dígitos |
+| Código externo | GTIN canónico de 14 dígitos si el tipo es `GS1`; código propietario si es `No GS1` |
 | Alcance | `Producto` o `Presentación` |
 | Empaque | nivel de empaque: `Unidad`, `Inner`, `Caja máster` o `Pallet` |
 | Cantidad | entero mayor o igual que 1 |
@@ -32,9 +32,11 @@ componentes e iconografía).
 | Acciones | botón ámbar de esquinas redondeadas con icono de lápiz relleno y sugerencia `Editar` |
 
 Los 182 registros de ejemplo se generan al cargar la vista, con valores aleatorios
-dentro de esos rangos y con el destino ya conforme a la regla RD-MOD-01: los de
+dentro de esos rangos, con el destino ya conforme a la regla RD-MOD-01 —los de
 alcance `Producto` llevan `Unidad` y `1`, y los de `Presentación`, un nivel
-agrupado y su cantidad. `SKU`, `Proveedor`, `Código externo` y `Alcance` comparten
+agrupado y su cantidad— y con el código externo coherente con su tipo: los `GS1`
+llevan un GTIN-14 con dígito verificador correcto y los `No GS1`, un código
+propietario alfanumérico. `SKU`, `Proveedor`, `Código externo` y `Alcance` comparten
 ancho; `Tipo`, las de un solo número y las de control son más angostas, y
 cualquier valor más largo que su columna continúa en el siguiente renglón.
 
@@ -167,7 +169,9 @@ Cada registro con algún problema se muestra sobre fondo rojizo, con el dato
 concreto recuadrado y el detalle del error en la última columna; los correctos
 llevan la palabra `Correcto`. Se comprueba que el SKU exista en el catálogo, que
 el proveedor esté registrado, que el tipo sea `GS1` o `No GS1`, que el código
-externo no esté vacío, que el alcance sea `Producto` o `Presentación`, que el
+externo cumpla la norma de su tipo declarado —longitud y dígito verificador si es
+`GS1`, solo no estar vacío si es `No GS1`—, que el alcance sea `Producto` o
+`Presentación`, que el
 estatus sea `Activo` o `Inactivo`, y que el destino cumpla la regla: con
 alcance `Producto` el empaque ha de ser `Unidad` y la cantidad `1` —si el archivo
 trae esas dos celdas vacías se completan solas, y la previsualización muestra ya
@@ -195,8 +199,9 @@ El formulario es:
 | Fila | Campos |
 | --- | --- |
 | 1 | `SKU` (código, con búsqueda) y `Nombre del producto` (solo lectura) |
-| 2 | `Proveedor` (con búsqueda) y `Código externo` |
-| 3 | `Alcance`, `Empaque` y `Cantidad` — el destino |
+| 2 | `Proveedor` (con búsqueda) |
+| 3 | `Tipo` y `Código externo` |
+| 4 | `Alcance`, `Empaque` y `Cantidad` — el destino |
 
 `SKU` admite solo dígitos y, a partir de 3, despliega los productos del catálogo
 cuyo código contiene lo escrito, mostrando el código seguido del nombre. Se ven
@@ -228,6 +233,51 @@ deja el formulario a medias. Un campo bloqueado nunca se marca en rojo.
 o igual que 1: quedan fuera el vacío, el cero, los decimales, los negativos y lo
 no numérico.
 
+#### El tipo y el código externo (CF-51779 / ERB-51772)
+
+`Tipo` es un campo obligatorio de **selección explícita**: lo afirma quien
+captura, y arranca en `- Selecciona un tipo -`. El módulo **nunca** lo deduce del
+código. El motivo es funcional: si alguien declara `GS1` y el código no cumple la
+norma, eso es un error de captura que hay que reportar, no una razón para
+reclasificar el registro en silencio como `No GS1`.
+
+Como ayuda, mientras nadie haya declarado el tipo, escribir el código externo lo
+**preselecciona** según su aspecto (longitud de GTIN → `GS1`). En cuanto se elige
+un tipo a mano la sugerencia se apaga para el resto de la captura, y al editar un
+registro existente no se sugiere nunca: su tipo ya viene afirmado. En todos los
+casos, el valor que se guarda es el que quede seleccionado en el campo.
+
+El tipo declarado decide con qué norma se valida el código:
+
+**`GS1`** — solo dígitos y longitud 8, 12, 13 o 14 (GTIN-8/12/13/14), más el
+dígito verificador real de GS1: suma ponderada del cuerpo con pesos alternos 3 y
+1, empezando con 3 en el dígito inmediatamente a la izquierda del verificador.
+No es Luhn, que alterna 2 y 1 y arrastra los productos de dos cifras. Se rechazan
+además, con mensaje propio, los casos en que se captura la etiqueta en lugar del
+GTIN: una cadena GS1-128 con identificadores de aplicación (`(01)...`), la misma
+cadena sin paréntesis (`01` seguido de más dígitos de los que cabe un GTIN) y un
+SSCC de 18 dígitos.
+
+Un GTIN correcto se guarda en su **forma canónica de 14 posiciones**, rellenando
+con ceros a la izquierda. Solo rellena, nunca recorta: `7501234567893` y
+`07501234567893` son el mismo código, mientras que `17501234567890` es otro
+—su primer dígito es el indicador de nivel de empaque—.
+
+**`No GS1`** — no se le aplica ningún dígito verificador; solo se exige que no
+esté vacío. La normalización exacta de los códigos propietarios **está pendiente
+de confirmar con negocio** (queda por revisar el anexo *Códigos propietarios
+(NO_GS1): normalización y casos de prueba*), así que el código va tal cual: hay
+un `TODO` en `app.js` para no dar por cerrada una regla que no se ha validado.
+
+En los dos casos el código se maneja **siempre como texto**. No se convierte a
+número en ningún punto del flujo —tampoco al escribir el `.xlsx`, donde los
+valores que empiezan por cero se emiten como texto—, porque hacerlo perdería los
+ceros a la izquierda y, con códigos largos, acabaría en notación científica.
+
+La carga masiva aplica exactamente la misma validación, tomando el tipo de la
+columna `Tipo` del archivo, de modo que un código que el alta manual rechaza lo
+rechaza también la importación y al revés.
+
 El catálogo se inventa al cargar la vista: 30 familias de refacción por 30
 aplicaciones, 900 productos con código de 7 dígitos agrupados por familia. Los
 registros de la tabla toman su SKU de ese catálogo, de modo que al editar uno se
@@ -240,9 +290,7 @@ hasta que tenga un valor válido. El SKU y el proveedor deben corresponder a un
 registro existente: no basta escribirlos, hay que elegirlos de la lista. Con todo capturado, la equivalencia se añade al
 principio de la tabla: se retira el orden y se vuelve a la primera página para
 dejarla a la vista, queda resaltada unos segundos y un toast lo confirma —o
-advierte si los filtros activos la dejan fuera—. El `Tipo` se deduce del código
-externo: se toma como `GS1` cuando su longitud es la de un GTIN (8, 12, 13 o 14
-dígitos) y como `No GS1` en cualquier otro caso. Los registros nuevos entran
+advierte si los filtros activos la dejan fuera—. Los registros nuevos entran
 activos.
 
 ### Bitácora de cambios
