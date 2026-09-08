@@ -26,13 +26,15 @@ componentes e iconografía).
 | Tipo | `GS1` o `No GS1` |
 | Código externo | código de 12 dígitos |
 | Alcance | `Producto` o `Presentación` |
-| Empaque | número de 1 a 20 |
-| Cantidad | número de 1 a 20 |
+| Empaque | nivel de empaque: `Unidad`, `Inner`, `Caja máster` o `Pallet` |
+| Cantidad | entero mayor o igual que 1 |
 | Estatus | interruptor circular que alterna activo (azul) e inactivo (gris) |
 | Acciones | botón ámbar de esquinas redondeadas con icono de lápiz relleno y sugerencia `Editar` |
 
 Los 182 registros de ejemplo se generan al cargar la vista, con valores aleatorios
-dentro de esos rangos. `SKU`, `Proveedor`, `Código externo` y `Alcance` comparten
+dentro de esos rangos y con el destino ya conforme a la regla RD-MOD-01: los de
+alcance `Producto` llevan `Unidad` y `1`, y los de `Presentación`, un nivel
+agrupado y su cantidad. `SKU`, `Proveedor`, `Código externo` y `Alcance` comparten
 ancho; `Tipo`, las de un solo número y las de control son más angostas, y
 cualquier valor más largo que su columna continúa en el siguiente renglón.
 
@@ -166,8 +168,11 @@ concreto recuadrado y el detalle del error en la última columna; los correctos
 llevan la palabra `Correcto`. Se comprueba que el SKU exista en el catálogo, que
 el proveedor esté registrado, que el tipo sea `GS1` o `No GS1`, que el código
 externo no esté vacío, que el alcance sea `Producto` o `Presentación`, que el
-empaque y la cantidad sean números mayores que cero y que el estatus sea `Activo`
-o `Inactivo`.
+estatus sea `Activo` o `Inactivo`, y que el destino cumpla la regla: con
+alcance `Producto` el empaque ha de ser `Unidad` y la cantidad `1` —si el archivo
+trae esas dos celdas vacías se completan solas, y la previsualización muestra ya
+el valor completado—, y con alcance `Presentación` el empaque ha de ser `Inner`,
+`Caja máster` o `Pallet` y la cantidad un entero mayor o igual que 1.
 
 Si todo está correcto aparece el botón `Continuar`, que carga los registros al
 principio de la tabla y lo confirma con un toast. Si falla un solo dato, ese botón
@@ -191,13 +196,37 @@ El formulario es:
 | --- | --- |
 | 1 | `SKU` (código, con búsqueda) y `Nombre del producto` (solo lectura) |
 | 2 | `Proveedor` (con búsqueda) y `Código externo` |
-| 3 | `Alcance`, `Empaque` y `Cantidad` |
+| 3 | `Alcance`, `Empaque` y `Cantidad` — el destino |
 
 `SKU` admite solo dígitos y, a partir de 3, despliega los productos del catálogo
 cuyo código contiene lo escrito, mostrando el código seguido del nombre. Se ven
 cinco a la vez y el resto se alcanza desplazando la lista; al elegir uno se
 llenan el código y el nombre. `Proveedor` funciona igual sobre los nombres de
 proveedores. `Alcance` arranca en `- Selecciona un alcance -`.
+
+#### El destino (RD-MOD-01)
+
+El destino de una equivalencia es **SKU + alcance + nivel de empaque + cantidad**,
+y los dos últimos dependen del alcance:
+
+| Alcance | Nivel de empaque | Cantidad |
+| --- | --- | --- |
+| `Producto` | fijo en `Unidad`, no se captura | fija en `1`, no se captura |
+| `Presentación` | obligatorio: `Inner`, `Caja máster` o `Pallet` | obligatoria: entero ≥ 1 |
+
+`Empaque` es un desplegable que arranca en `- Selecciona un nivel -` y solo
+ofrece los tres niveles agrupados; `Unidad` no está entre sus opciones porque
+nunca se elige a mano. Con alcance `Producto`, los dos campos conservan su sitio
+—para que el formulario no cambie de alto— pero muestran su valor implícito
+(`Unidad` y `1`) en el gris de solo lectura, el desplegable pierde su flecha y
+ninguno admite foco: se ve que el dato existe y que no se captura ahí. Al pasar a
+`Presentación` vuelven a ser editables y recuperan lo último que se hubiera
+capturado, de modo que alternar entre los dos alcances no pierde el trabajo ni
+deja el formulario a medias. Un campo bloqueado nunca se marca en rojo.
+
+`Cantidad` admite solo dígitos mientras se escribe y se valida como entero mayor
+o igual que 1: quedan fuera el vacío, el cero, los decimales, los negativos y lo
+no numérico.
 
 El catálogo se inventa al cargar la vista: 30 familias de refacción por 30
 aplicaciones, 900 productos con código de 7 dígitos agrupados por familia. Los

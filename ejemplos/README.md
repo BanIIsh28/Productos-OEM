@@ -6,8 +6,13 @@ Ambos siguen la estructura de la plantilla que descarga el módulo: `SKU`,
 
 ## `Importar-correctos.xlsx`
 
-Cinco registros válidos. Los SKU corresponden a productos del catálogo del
-módulo y los proveedores a nombres de su lista:
+Cinco registros válidos, que además cubren los dos casos del destino
+(RD-MOD-01): dos de alcance `Producto` —uno con `Unidad` y `1` escritos y otro
+con esas dos celdas vacías, para ver cómo se completan solas— y tres de alcance
+`Presentación`, con `Inner`, `Caja máster` y `Pallet`.
+
+Los SKU corresponden a productos del catálogo del módulo y los proveedores a
+nombres de su lista:
 
 | SKU | Producto que resuelve |
 | --- | --- |
@@ -26,5 +31,5 @@ Cinco registros con un problema distinto cada uno, para probar la verificación:
 | 2 | `SKU` vacío |
 | 3 | `SKU` 9999999, que no existe en el catálogo |
 | 4 | Proveedor que no está en la lista |
-| 5 | `Código externo` vacío |
-| 6 | `Alcance` con un valor ajeno (`Surtido`), `Empaque` vacío, `Cantidad` no numérica (`doce`) y `Estatus` desconocido (`Suspendido`) |
+| 5 | Alcance `Presentación` con `Empaque` en `Unidad`, que ahí no se admite, y `Cantidad` decimal (`2.5`) |
+| 6 | `Alcance` con un valor ajeno (`Surtido`), `Cantidad` no numérica (`doce`) y `Estatus` desconocido (`Suspendido`) |

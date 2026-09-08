@@ -99,6 +99,30 @@
   var TIPOS = ['GS1', 'No GS1'];
   var ALCANCES = ['Producto', 'Presentación'];
 
+  /* ---------- Destino APYMSA (RD-MOD-01) ----------
+
+     El destino de una equivalencia es SKU + alcance + nivel de empaque
+     + cantidad. Un alcance de "Producto" apunta a la unidad suelta, de
+     modo que su nivel y su cantidad son implícitos —Unidad y 1— y no
+     los captura nadie; los niveles agrupados solo existen dentro de una
+     "Presentación". */
+
+  var NIVEL_UNIDAD = 'Unidad';
+  var NIVELES_EMPAQUE = ['Inner', 'Caja máster', 'Pallet'];
+  var CANTIDAD_UNIDAD = '1';
+
+  /* El nivel de empaque que corresponde al alcance, cuando es implícito */
+  function esAlcanceProducto(alcance) { return alcance === 'Producto'; }
+
+  function nivelValido(nivel) { return NIVELES_EMPAQUE.indexOf(nivel) !== -1; }
+
+  /* Cantidad admisible: entero decimal mayor o igual que 1. Descarta
+     vacíos, decimales, negativos, el cero y lo no numérico. */
+  function cantidadValida(texto) {
+    var valor = String(texto === undefined || texto === null ? '' : texto).trim();
+    return /^\d+$/.test(valor) && Number(valor) >= 1;
+  }
+
   function randomInt(min, max) {
     return min + Math.floor(Math.random() * (max - min + 1));
   }
@@ -127,14 +151,19 @@
       if (usados[sku]) { continue; }
       usados[sku] = true;
 
+      /* El destino se genera según la regla: la unidad suelta lleva
+         Unidad y 1; una presentación, un nivel agrupado y su cantidad */
+      var alcance = pick(ALCANCES);
+      var producto = esAlcanceProducto(alcance);
+
       rows.push([
         sku,
         pick(PROVEEDORES),
         pick(TIPOS),
         randomCode(12),
-        pick(ALCANCES),
-        String(randomInt(1, 20)),
-        String(randomInt(1, 20)),
+        alcance,
+        producto ? NIVEL_UNIDAD : pick(NIVELES_EMPAQUE),
+        producto ? CANTIDAD_UNIDAD : String(randomInt(2, 20)),
         Math.random() < 0.7          /* la mayoría activos */
       ]);
     }
@@ -261,10 +290,17 @@
 
       /* Uno de cada cuatro registros recibió después un ajuste de datos */
       if (Math.random() < 0.25) {
-        var indice = pick([COL_PROVEEDOR, 3, 5, 6]);
+        /* El nivel de empaque y la cantidad de un "Producto" son
+           implícitos: nadie los captura, así que nadie los editó */
+        var editables = esAlcanceProducto(row[COL_ALCANCE])
+          ? [COL_PROVEEDOR, 3]
+          : [COL_PROVEEDOR, 3, 5, 6];
+
+        var indice = pick(editables);
         var previo = indice === COL_PROVEEDOR ? pick(PROVEEDORES)
           : indice === 3 ? randomCode(12)
-          : String(randomInt(1, 20));
+          : indice === 5 ? pick(NIVELES_EMPAQUE)
+          : String(randomInt(2, 20));
 
         if (String(previo) !== String(row[indice])) {
           anotar(row, 'Edición', CAMPOS[indice], previo, String(row[indice]),
@@ -660,7 +696,7 @@
   /* ---------- Exportar a Excel ---------- */
 
   /* Ancho aproximado de cada columna en la hoja de cálculo */
-  var SHEET_WIDTHS = [12, 32, 10, 18, 16, 11, 11, 11];
+  var SHEET_WIDTHS = [12, 32, 10, 18, 16, 14, 11, 11];
 
   function timestamp() {
     var now = new Date();
@@ -721,7 +757,8 @@
 
   /* Plantilla de carga: encabezados y una fila de ejemplo */
   var TEMPLATE_ROW = [
-    '1234567', 'Nombre del proveedor', 'GS1', '123456789012', 'Producto', '5', '10', 'Activo'
+    '1234567', 'Nombre del proveedor', 'GS1', '123456789012',
+    'Presentación', 'Caja máster', '12', 'Activo'
   ];
 
   function downloadTemplate() {
@@ -832,19 +869,35 @@
       fallo(4, 'El alcance debe ser Producto o Presentación');
     }
 
-    /* Empaque y cantidad */
-    [
-      { indice: 5, sujeto: 'El empaque', vacio: 'vacío' },
-      { indice: 6, sujeto: 'La cantidad', vacio: 'vacía' }
-    ].forEach(function (campo) {
-      var valor = valores[campo.indice];
+    /* Nivel de empaque y cantidad: el destino depende del alcance.
+       Con "Producto" ambos son implícitos, así que el archivo puede
+       traerlos vacíos y se completan solos; con "Presentación" hay que
+       declararlos. Sin un alcance utilizable la regla no se puede
+       aplicar, y el error del alcance ya invalida la fila. */
+    if (esAlcanceProducto(valores[4])) {
+      if (!valores[5]) { valores[5] = NIVEL_UNIDAD; }
+      if (!valores[6]) { valores[6] = CANTIDAD_UNIDAD; }
 
-      if (!valor) {
-        fallo(campo.indice, campo.sujeto + ' está ' + campo.vacio);
-      } else if (!/^\d+$/.test(valor) || Number(valor) < 1) {
-        fallo(campo.indice, campo.sujeto + ' debe ser un número mayor que cero');
+      if (valores[5] !== NIVEL_UNIDAD) {
+        fallo(5, 'Con alcance Producto el empaque debe ser ' + NIVEL_UNIDAD);
       }
-    });
+      if (valores[6] !== CANTIDAD_UNIDAD) {
+        fallo(6, 'Con alcance Producto la cantidad debe ser ' + CANTIDAD_UNIDAD);
+      }
+    } else if (valores[4] === 'Presentación') {
+      if (!valores[5]) {
+        fallo(5, 'El empaque está vacío');
+      } else if (!nivelValido(valores[5])) {
+        fallo(5, 'Con alcance Presentación el empaque debe ser ' +
+          NIVELES_EMPAQUE.join(', '));
+      }
+
+      if (!valores[6]) {
+        fallo(6, 'La cantidad está vacía');
+      } else if (!cantidadValida(valores[6])) {
+        fallo(6, 'La cantidad debe ser un número entero mayor o igual a 1');
+      }
+    }
 
     /* Estatus */
     if (!valores[7]) {
@@ -1407,6 +1460,22 @@
       var span = select.querySelector('.select__trigger span');
       return span ? span.textContent : '';
     };
+
+    /* Muestra un valor sin pasar por el desplegable */
+    wrapper._display = function (texto) {
+      if (select._setSelected) { select._setSelected(texto); }
+    };
+
+    /* Campo bloqueado: conserva su sitio y adopta el gris de solo
+       lectura, para que se vea que el valor no se captura aquí */
+    wrapper._lock = function (bloqueado) {
+      var trigger = select.querySelector('.select__trigger');
+
+      if (trigger) { trigger.disabled = !!bloqueado; }
+      select.classList.toggle('select--locked', !!bloqueado);
+      if (bloqueado && select._closeSelect) { select._closeSelect(); }
+    };
+
     return wrapper;
   }
 
@@ -1468,18 +1537,75 @@
     var codigoExterno = textField('Código externo', 3,
       editando ? { value: registro[3] } : null);
 
-    /* Fila 3: alcance, empaque y cantidad */
-    var alcance = selectField('Alcance', 2, ['- Selecciona un alcance -'].concat(ALCANCES),
-      function () { tocados.alcance = true; revisar(); },
+    /* Fila 3: el destino —alcance, nivel de empaque y cantidad— */
+    var SIN_ALCANCE = '- Selecciona un alcance -';
+    var SIN_EMPAQUE = '- Selecciona un nivel -';
+
+    var alcance = selectField('Alcance', 2, [SIN_ALCANCE].concat(ALCANCES),
+      function () {
+        tocados.alcance = true;
+        aplicarDestino();
+        revisar();
+      },
       editando ? registro[COL_ALCANCE] : null);
 
-    var empaque = textField('Empaque', 2, editando ? { value: registro[5] } : null);
-    var cantidad = textField('Cantidad', 2, editando ? { value: registro[6] } : null);
+    var empaque = selectField('Empaque', 2, [SIN_EMPAQUE].concat(NIVELES_EMPAQUE),
+      function () {
+        tocados.empaque = true;
+        recordado.empaque = empaque._value();
+        revisar();
+      });
+
+    var cantidad = textField('Cantidad', 2, { digitsOnly: true });
+
+    /* Lo último que capturó el usuario para el destino agrupado. Se
+       conserva aparte porque al pasar a "Producto" los campos quedan
+       fijos en Unidad y 1, y al volver a "Presentación" hay que
+       devolverles lo que había en lugar de dejarlos en blanco. */
+    var deProducto = editando && esAlcanceProducto(registro[COL_ALCANCE]);
+
+    var recordado = {
+      empaque: editando && !deProducto ? registro[5] : SIN_EMPAQUE,
+      cantidad: editando && !deProducto ? registro[6] : ''
+    };
 
     var campos = [sku, nombreProducto, proveedor, codigoExterno, alcance, empaque, cantidad];
     campos.forEach(function (campo) { body.appendChild(campo); });
 
-    var SIN_ALCANCE = '- Selecciona un alcance -';
+    function esProducto() { return esAlcanceProducto(alcance._value()); }
+
+    /* Valores con los que se guardaría el destino: implícitos cuando el
+       alcance es "Producto", capturados cuando es "Presentación" */
+    function destinoEfectivo() {
+      return esProducto()
+        ? { empaque: NIVEL_UNIDAD, cantidad: CANTIDAD_UNIDAD }
+        : { empaque: empaque._value(), cantidad: cantidad._input.value.trim() };
+    }
+
+    /* Ajusta los dos campos del destino al alcance elegido. Con
+       "Producto" muestran su valor implícito y quedan bloqueados; con
+       "Presentación" recuperan lo capturado y vuelven a ser editables. */
+    function aplicarDestino() {
+      var fijo = esProducto();
+
+      empaque._display(fijo ? NIVEL_UNIDAD : recordado.empaque);
+      empaque._lock(fijo);
+
+      cantidad._input.value = fijo ? CANTIDAD_UNIDAD : recordado.cantidad;
+      cantidad._input.readOnly = fijo;
+
+      if (fijo) {
+        cantidad._input.tabIndex = -1;
+      } else {
+        cantidad._input.removeAttribute('tabindex');
+      }
+
+      /* Un campo bloqueado nunca se muestra en rojo */
+      if (fijo) {
+        marcar(empaque, false);
+        marcar(cantidad, false);
+      }
+    }
 
     function marcar(campo, invalido) {
       var control = campo._input || campo.querySelector('.select__trigger');
@@ -1499,8 +1625,10 @@
         }),
         codigo: codigoExterno._input.value.trim() !== '',
         alcance: alcance._value() !== SIN_ALCANCE,
-        empaque: empaque._input.value.trim() !== '',
-        cantidad: cantidad._input.value.trim() !== ''
+        /* Con "Producto" el destino es implícito: no se le exige nada
+           al usuario. Con "Presentación" hay que declararlo. */
+        empaque: esProducto() || nivelValido(empaque._value()),
+        cantidad: esProducto() || cantidadValida(cantidad._input.value)
       };
     }
 
@@ -1522,14 +1650,18 @@
 
       var completo = Object.keys(v).every(function (clave) { return v[clave]; });
 
-      /* Al editar no hay nada que guardar si no se ha cambiado nada */
+      /* Al editar no hay nada que guardar si no se ha cambiado nada. El
+         destino se compara por el valor con que se guardaría, no por lo
+         que muestran los campos: con "Producto" son Unidad y 1. */
+      var destino = destinoEfectivo();
+
       var conCambios = !editando || [
         sku._input.value.trim() !== registro[COL_SKU],
         normalize(proveedor._input.value.trim()) !== normalize(registro[1]),
         codigoExterno._input.value.trim() !== registro[3],
         alcance._value() !== registro[COL_ALCANCE],
-        empaque._input.value.trim() !== registro[5],
-        cantidad._input.value.trim() !== registro[6]
+        destino.empaque !== registro[5],
+        destino.cantidad !== registro[6]
       ].some(Boolean);
 
       if (botonGuardar) {
@@ -1563,14 +1695,16 @@
     }
 
     function guardar() {
+      var destino = destinoEfectivo();
+
       var valores = {
         sku: sku._input.value.trim(),
         producto: nombreProducto._input.value.trim(),
         proveedor: proveedor._input.value.trim(),
         codigo: codigoExterno._input.value.trim(),
         alcance: alcance._value(),
-        empaque: empaque._input.value.trim(),
-        cantidad: cantidad._input.value.trim()
+        empaque: destino.empaque,
+        cantidad: destino.cantidad
       };
 
       /* El SKU y el proveedor deben corresponder a un registro existente */
@@ -1582,21 +1716,32 @@
         return normalize(nombre) === normalize(valores.proveedor);
       });
 
+      /* El destino solo se exige cuando el alcance es "Presentación":
+         con "Producto" ya viene resuelto en Unidad y 1 */
+      var fijo = esProducto();
+      var empaqueValido = fijo || nivelValido(valores.empaque);
+      var cantidadOk = fijo || cantidadValida(valores.cantidad);
+
       var faltantes = [];
 
       if (!producto) { faltantes.push('SKU'); }
       if (!proveedorValido) { faltantes.push('Proveedor'); }
       if (!valores.codigo) { faltantes.push('Código externo'); }
       if (valores.alcance === SIN_ALCANCE) { faltantes.push('Alcance'); }
-      if (!valores.empaque) { faltantes.push('Empaque'); }
-      if (!valores.cantidad) { faltantes.push('Cantidad'); }
+      if (!empaqueValido) { faltantes.push('Nivel de empaque'); }
+
+      if (!cantidadOk) {
+        faltantes.push(valores.cantidad === ''
+          ? 'Cantidad'
+          : 'Cantidad debe ser un número entero mayor o igual a 1');
+      }
 
       marcar(sku, !producto);
       marcar(proveedor, !proveedorValido);
       marcar(codigoExterno, !valores.codigo);
       marcar(alcance, valores.alcance === SIN_ALCANCE);
-      marcar(empaque, !valores.empaque);
-      marcar(cantidad, !valores.cantidad);
+      marcar(empaque, !empaqueValido);
+      marcar(cantidad, !cantidadOk);
 
       if (faltantes.length) {
         showToast(faltantes.length === 1
@@ -1656,9 +1801,16 @@
     vigilar(sku, 'sku');
     vigilar(proveedor, 'proveedor');
     vigilar(codigoExterno, 'codigo');
-    vigilar(empaque, 'empaque');
     vigilar(cantidad, 'cantidad');
 
+    /* Lo capturado en cantidad se recuerda para cuando el alcance
+       vuelva a "Presentación" */
+    cantidad._input.addEventListener('input', function () {
+      if (!cantidad._input.readOnly) { recordado.cantidad = cantidad._input.value; }
+    });
+
+    /* El estado del destino se fija ya con los desplegables construidos */
+    aplicarDestino();
     revisar();
     sku._input.focus();
   }
@@ -1802,6 +1954,19 @@
       event.stopPropagation();
       if (root.classList.contains('select--open')) { close(); } else { open(); }
     });
+
+    /* Fija lo mostrado en el disparador. Admite un valor ajeno a la
+       lista, para los casos en que el dato viene impuesto y no se elige. */
+    root._setSelected = function (option) {
+      var index = options.indexOf(option);
+
+      value.textContent = option;
+      if (index !== -1) { selected = index; }
+
+      Array.prototype.forEach.call(menu.children, function (child, i) {
+        child.setAttribute('aria-selected', String(index !== -1 && i === index));
+      });
+    };
 
     root.appendChild(trigger);
     root.appendChild(menu);

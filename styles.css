@@ -463,15 +463,17 @@ a:hover { color: rgb(0, 50, 90); }
 
 .table {
   display: grid;
-  /* SKU, Proveedor, Tipo, Código externo y Alcance comparten ancho;
-     Empaque, Cantidad, Estatus y Acciones son más angostas */
+  /* SKU, Proveedor, Código externo y Alcance comparten ancho; Tipo,
+     Cantidad, Estatus y Acciones son más angostas. Empaque dejó de ser
+     un número para pasar a ser el nivel de empaque, así que necesita
+     sitio para "Caja máster". */
   grid-template-columns:
     minmax(0, 1fr)                /* SKU */
     minmax(0, 1fr)                /* Proveedor */
     minmax(0, 0.55fr)             /* Tipo */
     minmax(0, 1fr)                /* Código externo */
     minmax(0, 1fr)                /* Alcance */
-    minmax(0, 0.55fr)             /* Empaque */
+    minmax(0, 0.8fr)              /* Empaque */
     minmax(0, 0.55fr)             /* Cantidad */
     minmax(0, 0.5fr)              /* Estatus */
     minmax(0, 0.5fr);             /* Acciones */
@@ -942,6 +944,17 @@ a:hover { color: rgb(0, 50, 90); }
 
 .field input[readonly]:focus,
 .field .input--readonly:focus { outline: none; }
+
+/* Desplegable de formulario cuyo valor no se captura porque viene
+   impuesto por otro campo: mismo gris de solo lectura y sin la flecha,
+   que ya no hay nada que desplegar */
+.field .select--locked .select__trigger {
+  background: rgb(238, 238, 238);
+  color: rgb(60, 60, 60);
+  cursor: default;
+}
+
+.field .select--locked .select__trigger svg { visibility: hidden; }
 
 /* ---------- Campos con sugerencias ---------- */
 
