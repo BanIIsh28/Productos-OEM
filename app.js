@@ -126,45 +126,6 @@
     return (10 - (suma % 10)) % 10;
   }
 
-  /* Motivo por el que un código declarado como GS1 no sirve, o null si
-     está correcto. */
-  function errorGs1(codigo) {
-    var valor = String(codigo === undefined || codigo === null ? '' : codigo).trim();
-
-    if (valor === '') { return 'El código externo está vacío'; }
-
-    /* Etiqueta GS1-128 con identificadores de aplicación: "(01)7501..." */
-    if (/[()]/.test(valor)) {
-      return 'Captura solo el GTIN, sin los identificadores de aplicación de la etiqueta';
-    }
-
-    if (!/^\d+$/.test(valor)) {
-      return 'El código GS1 debe contener solo dígitos';
-    }
-
-    /* SSCC (AI 00): 18 dígitos que identifican una unidad logística,
-       no un producto */
-    if (valor.length === 18) {
-      return 'El código capturado es un SSCC de 18 dígitos, no un GTIN';
-    }
-
-    /* Cadena GS1-128 sin paréntesis: el AI 01 seguido del GTIN y más datos */
-    if (valor.length > 14 && valor.slice(0, 2) === '01') {
-      return 'Captura solo el GTIN, no la cadena completa de la etiqueta';
-    }
-
-    if (LONGITUDES_GTIN.indexOf(valor.length) === -1) {
-      return 'El código no es un GS1 válido: longitud inválida ' +
-        '(se esperan 8, 12, 13 o 14 dígitos)';
-    }
-
-    if (digitoVerificadorGs1(valor.slice(0, -1)) !== Number(valor.slice(-1))) {
-      return 'El código no es un GS1 válido: dígito verificador incorrecto';
-    }
-
-    return null;
-  }
-
   /* Forma canónica de un GTIN: 14 posiciones, rellenando con ceros a la
      izquierda. Solo rellena, nunca recorta: "7501234567893" y
      "07501234567893" son el mismo código, mientras que
@@ -177,35 +138,85 @@
     return valor;
   }
 
-  /* Motivo por el que un código propietario no sirve, o null.
-
-     TODO: la normalización exacta de los códigos No GS1 está pendiente
-     de confirmar con negocio —queda por revisar el anexo "Códigos
-     propietarios (NO_GS1): normalización y casos de prueba"—. Hasta
-     entonces solo se exige que no esté vacío: se trata como texto y no
-     se le aplica ninguna validación de dígito verificador. */
-  function errorNoGs1(codigo) {
-    var valor = String(codigo === undefined || codigo === null ? '' : codigo).trim();
-    return valor === '' ? 'El código externo está vacío' : null;
+  function textoCodigo(codigo) {
+    return String(codigo === undefined || codigo === null ? '' : codigo).trim();
   }
 
-  /* Revisa el código contra el tipo declarado. Sin un tipo utilizable
-     solo se puede exigir que no esté vacío. */
-  function errorCodigoExterno(codigo, tipoDeclarado) {
-    if (tipoDeclarado === 'GS1') { return errorGs1(codigo); }
-    if (tipoDeclarado === 'No GS1') { return errorNoGs1(codigo); }
+  function rechazo(motivo, mensaje) {
+    return { valido: false, motivo: motivo, mensaje: mensaje };
+  }
 
-    return String(codigo === undefined || codigo === null ? '' : codigo).trim() === ''
-      ? 'El código externo está vacío'
-      : null;
+  var CODIGO_ACEPTADO = { valido: true, motivo: null, mensaje: null };
+
+  /**
+   * Única validación del código externo del módulo. La usan el alta
+   * manual —openEquivalenceModal— y la carga masiva —revisarFila—, de
+   * modo que un código que una rechaza lo rechaza también la otra: el
+   * algoritmo del dígito verificador vive solo aquí.
+   *
+   * @param {string} tipo - tipo declarado: 'GS1' o 'No GS1'
+   * @param {string} codigo - lo capturado, siempre como texto
+   * @returns {{ valido: boolean, motivo: string, mensaje: string }}
+   *   'motivo' es una clave estable ('vacio', 'etiqueta', 'sscc',
+   *   'no-digitos', 'longitud', 'verificador') por si algún día hace
+   *   falta distinguir el caso sin comparar el mensaje.
+   */
+  function validarCodigoExterno(tipo, codigo) {
+    var valor = textoCodigo(codigo);
+
+    if (valor === '') { return rechazo('vacio', 'El código externo está vacío'); }
+
+    /* Un código propietario no lleva dígito verificador.
+
+       TODO: la normalización exacta de los códigos No GS1 está
+       pendiente de confirmar con negocio —queda por revisar el anexo
+       "Códigos propietarios (NO_GS1): normalización y casos de
+       prueba"—. Hasta entonces solo se exige que no esté vacío: se
+       trata como texto y no se valida nada más. */
+    if (tipo !== 'GS1') { return CODIGO_ACEPTADO; }
+
+    /* Etiqueta GS1-128 con identificadores de aplicación: "(01)7501..." */
+    if (/[()]/.test(valor)) {
+      return rechazo('etiqueta',
+        'El código parece una etiqueta GS1-128 completa, captura solo el GTIN');
+    }
+
+    if (!/^\d+$/.test(valor)) {
+      return rechazo('no-digitos', 'El código GS1 debe contener solo dígitos');
+    }
+
+    /* SSCC (AI 00): 18 dígitos que identifican una unidad logística,
+       no un producto */
+    if (valor.length === 18) {
+      return rechazo('sscc', 'El código es un SSCC de 18 dígitos, captura solo el GTIN');
+    }
+
+    /* La misma cadena de la etiqueta sin paréntesis: el AI 01 seguido
+       del GTIN y de más datos */
+    if (valor.length > 14 && valor.slice(0, 2) === '01') {
+      return rechazo('etiqueta',
+        'El código parece una etiqueta GS1-128 completa, captura solo el GTIN');
+    }
+
+    if (LONGITUDES_GTIN.indexOf(valor.length) === -1) {
+      return rechazo('longitud',
+        'El código GS1 tiene una longitud inválida (se esperan 8, 12, 13 o 14 dígitos)');
+    }
+
+    if (digitoVerificadorGs1(valor.slice(0, -1)) !== Number(valor.slice(-1))) {
+      return rechazo('verificador', 'El código GS1 tiene un dígito verificador inválido');
+    }
+
+    return CODIGO_ACEPTADO;
   }
 
   /* Valor con el que se guarda el código: el GTIN en su forma canónica
      cuando el tipo es GS1, y el texto tal cual cuando es propietario */
-  function codigoCanonico(codigo, tipoDeclarado) {
-    var valor = String(codigo === undefined || codigo === null ? '' : codigo).trim();
-    return tipoDeclarado === 'GS1' ? normalizarGtin(valor) : valor;
+  function codigoCanonico(tipo, codigo) {
+    var valor = textoCodigo(codigo);
+    return tipo === 'GS1' ? normalizarGtin(valor) : valor;
   }
+
   var ALCANCES = ['Producto', 'Presentación'];
 
   /* ---------- Destino APYMSA (RD-MOD-01) ----------
@@ -1003,21 +1014,15 @@
     /* Código externo: se valida con la norma del tipo declarado en el
        archivo, igual que en el alta manual. Un código GS1 correcto se
        guarda en su forma canónica de 14 posiciones. */
-    if (!valores[3]) {
-      fallo(3, 'El código externo está vacío');
-    } else if (valores[2] === 'GS1') {
-      var motivoGs1 = errorGs1(valores[3]);
+    var revisionCodigo = validarCodigoExterno(valores[2], valores[3]);
 
-      if (motivoGs1) {
-        fallo(3, motivoGs1 === 'El código no es un GS1 válido: dígito verificador incorrecto'
-          ? 'El código GS1 tiene un dígito verificador inválido'
-          : motivoGs1);
-      } else {
-        valores[3] = normalizarGtin(valores[3]);
-      }
+    if (!revisionCodigo.valido) {
+      fallo(3, revisionCodigo.mensaje);
+    } else {
+      /* Un GS1 correcto se guarda en su forma canónica; un código
+         propietario, tal cual */
+      valores[3] = codigoCanonico(valores[2], valores[3]);
     }
-    /* TODO: para los códigos No GS1 solo se exige que no estén vacíos;
-       su normalización está pendiente de confirmar con negocio. */
 
     /* Alcance */
     if (!valores[4]) {
@@ -1748,14 +1753,15 @@
 
     function esProducto() { return esAlcanceProducto(alcance._value()); }
 
-    /* Motivo por el que el código no sirve para el tipo declarado */
-    function errorCodigo() {
-      return errorCodigoExterno(codigoExterno._input.value, tipo._value());
+    /* Revisión del código contra el tipo declarado, con la misma
+       función que usa la carga masiva */
+    function revisarCodigo() {
+      return validarCodigoExterno(tipo._value(), codigoExterno._input.value);
     }
 
     /* Valor con el que se guardaría el código */
     function codigoAGuardar() {
-      return codigoCanonico(codigoExterno._input.value, tipo._value());
+      return codigoCanonico(tipo._value(), codigoExterno._input.value);
     }
 
     /* Valores con los que se guardaría el destino: implícitos cuando el
@@ -1809,7 +1815,7 @@
         }),
         tipo: tipo._value() !== SIN_TIPO,
         /* El código se valida con la norma del tipo declarado */
-        codigo: errorCodigo() === null,
+        codigo: revisarCodigo().valido,
         alcance: alcance._value() !== SIN_ALCANCE,
         /* Con "Producto" el destino es implícito: no se le exige nada
            al usuario. Con "Presentación" hay que declararlo. */
@@ -1918,8 +1924,8 @@
       var faltantes = [];
       var problemas = [];
 
-      var motivoCodigo = errorCodigo();
-      var codigoVacio = codigoExterno._input.value.trim() === '';
+      var revisionCodigo = revisarCodigo();
+      var codigoVacio = revisionCodigo.motivo === 'vacio';
 
       if (!producto) { faltantes.push('SKU'); }
       if (!proveedorValido) { faltantes.push('Proveedor'); }
@@ -1930,8 +1936,8 @@
 
       if (codigoVacio) {
         faltantes.push('Código externo');
-      } else if (motivoCodigo) {
-        problemas.push(motivoCodigo);
+      } else if (!revisionCodigo.valido) {
+        problemas.push(revisionCodigo.mensaje);
       }
 
       if (!cantidadOk && valores.cantidad !== '') {
@@ -1941,7 +1947,7 @@
       marcar(sku, !producto);
       marcar(proveedor, !proveedorValido);
       marcar(tipo, valores.tipo === SIN_TIPO);
-      marcar(codigoExterno, !!motivoCodigo);
+      marcar(codigoExterno, !revisionCodigo.valido);
       marcar(alcance, valores.alcance === SIN_ALCANCE);
       marcar(empaque, !empaqueValido);
       marcar(cantidad, !cantidadOk);

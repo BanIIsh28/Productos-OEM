@@ -247,16 +247,29 @@ un tipo a mano la sugerencia se apaga para el resto de la captura, y al editar u
 registro existente no se sugiere nunca: su tipo ya viene afirmado. En todos los
 casos, el valor que se guarda es el que quede seleccionado en el campo.
 
+La validación vive en una sola función, `validarCodigoExterno(tipo, codigo)`,
+que devuelve `{ valido, motivo, mensaje }` y la llaman tanto el alta manual como
+la carga masiva: el algoritmo del dígito verificador no está duplicado, así que
+un código que un camino rechaza lo rechaza también el otro, con el mismo mensaje.
+`motivo` es una clave estable —`vacio`, `etiqueta`, `sscc`, `no-digitos`,
+`longitud`, `verificador`— para poder distinguir el caso sin comparar textos.
+
 El tipo declarado decide con qué norma se valida el código:
 
 **`GS1`** — solo dígitos y longitud 8, 12, 13 o 14 (GTIN-8/12/13/14), más el
 dígito verificador real de GS1: suma ponderada del cuerpo con pesos alternos 3 y
 1, empezando con 3 en el dígito inmediatamente a la izquierda del verificador.
-No es Luhn, que alterna 2 y 1 y arrastra los productos de dos cifras. Se rechazan
-además, con mensaje propio, los casos en que se captura la etiqueta en lugar del
-GTIN: una cadena GS1-128 con identificadores de aplicación (`(01)...`), la misma
-cadena sin paréntesis (`01` seguido de más dígitos de los que cabe un GTIN) y un
-SSCC de 18 dígitos.
+No es Luhn, que alterna 2 y 1 y arrastra los productos de dos cifras. Cada
+rechazo lleva su mensaje:
+
+| Caso | Mensaje |
+| --- | --- |
+| Verificador que no cuadra | `El código GS1 tiene un dígito verificador inválido` |
+| Longitud fuera de 8/12/13/14 | `El código GS1 tiene una longitud inválida (se esperan 8, 12, 13 o 14 dígitos)` |
+| Cadena GS1-128, con o sin paréntesis | `El código parece una etiqueta GS1-128 completa, captura solo el GTIN` |
+| SSCC de 18 dígitos | `El código es un SSCC de 18 dígitos, captura solo el GTIN` |
+| Caracteres que no son dígitos | `El código GS1 debe contener solo dígitos` |
+| Sin capturar | `El código externo está vacío` |
 
 Un GTIN correcto se guarda en su **forma canónica de 14 posiciones**, rellenando
 con ceros a la izquierda. Solo rellena, nunca recorta: `7501234567893` y
