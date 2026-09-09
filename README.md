@@ -242,10 +242,11 @@ incidencias: un archivo con avisos se puede aplicar.
 
 #### Qué se ve
 
-El encabezado siempre muestra `Archivo`, `Fecha`, `Usuario` —un identificador
-simulado, el mismo que estampa la bitácora, porque el prototipo no tiene
-autenticación—, `Filas útiles` y el desglose en cuatro contadores: `Nuevas`,
-`Sin cambio`, `Con aviso` y `Con error`, cuya suma es siempre el total.
+El encabezado siempre muestra, en un solo renglón de ocho campos, `Archivo`,
+`Fecha`, `Usuario` —un identificador simulado, el mismo que estampa la bitácora,
+porque el prototipo no tiene autenticación—, `Filas útiles` y el desglose en
+cuatro contadores: `Nuevas`, `Sin cambio`, `Con aviso` y `Con error`, cuya suma
+es siempre el total.
 
 Debajo, un **desglose por código** de incidencia con cinco columnas: código,
 alias corto, severidad (`ERROR` o `INFORMACION`), filas afectadas y porcentaje
@@ -279,9 +280,14 @@ ayuda. Las filas con error van sobre fondo rojizo; las que solo traen aviso,
 
 La tabla crece con el contenido hasta ocupar el 30 % de la altura de la ventana;
 a partir de ahí el excedente se desplaza dentro de la tabla, con el encabezado
-azul fijo, y la ventana ya no crece más. Como esta ventana apila más bloques que
-ninguna otra, arranca más arriba que el resto —`clamp(16px, 4vh, 40px)` en lugar
-de `clamp(60px, 16vh, 220px)`— para aprovechar el alto disponible.
+azul fijo, y la ventana ya no crece más.
+
+Como esta ventana apila más bloques que ninguna otra, está ajustada para caber
+entera sin que la página se desplace: arranca más arriba que el resto
+—`clamp(16px, 4vh, 40px)` en lugar de `clamp(60px, 16vh, 220px)`—, el encabezado
+va en un renglón en vez de dos y la fila de filtros lleva la etiqueta al lado del
+desplegable, no encima. Con el archivo de ejemplo más cargado —19 filas, 17 con
+incidencia— cabe completa en 1280×720, 1366×768, 1440×900 y 1920×1080.
 
 *Nota*: el catálogo de códigos —alias, severidad y corrección recomendada— va en
 línea en `app.js` con valores razonables, pendiente de venir de una fuente

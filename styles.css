@@ -793,7 +793,7 @@ a:hover { color: rgb(0, 50, 90); }
    así que arranca más arriba para aprovechar el alto disponible */
 .modal-overlay--raised {
   padding-top: clamp(16px, 4vh, 40px);
-  padding-bottom: 24px;
+  padding-bottom: 20px;
 }
 
 .modal {
@@ -1089,7 +1089,25 @@ a:hover { color: rgb(0, 50, 90); }
 .modal--xwide { width: min(1340px, 100%); }
 
 .preview__summary {
-  margin: 0 0 14px;
+  margin: 0 0 10px;
+}
+
+/* Los ocho datos del encabezado en un solo renglón, en vez de dos: la
+   ventana apila tantos bloques que cada fila de más la saca de pantalla */
+.preview__summary--fila {
+  display: grid;
+  /* El nombre del archivo y la fecha piden sitio; los cuatro
+     contadores son cifras de dos o tres dígitos */
+  grid-template-columns:
+    minmax(0, 1.9fr)    /* Archivo */
+    minmax(0, 1.25fr)   /* Fecha */
+    minmax(0, 0.8fr)    /* Usuario */
+    minmax(0, 0.9fr)    /* Filas útiles */
+    minmax(0, 0.8fr)    /* Nuevas */
+    minmax(0, 0.95fr)   /* Sin cambio */
+    minmax(0, 0.85fr)   /* Con aviso */
+    minmax(0, 0.85fr);  /* Con error */
+  gap: 12px 14px;
 }
 
 .preview-table {
@@ -1173,7 +1191,7 @@ a:hover { color: rgb(0, 50, 90); }
 
 /* Estado de la validación del archivo */
 .preview__estado {
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   padding: 9px 12px;
   font-size: 12px;
   line-height: 1.45;
@@ -1209,7 +1227,7 @@ a:hover { color: rgb(0, 50, 90); }
     minmax(0, 80px);    /* % */
   max-height: 22vh;
   overflow-y: auto;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   border: 1px solid rgb(214, 214, 214);
 }
 
@@ -1264,12 +1282,24 @@ a:hover { color: rgb(0, 50, 90); }
 /* Filtros y paginación de las incidencias */
 .incidencias-head {
   display: flex;
-  align-items: flex-end;
-  gap: 14px;
-  margin-bottom: 14px;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
 }
 
-.incidencias-head .field { width: 150px; flex: none; }
+/* Etiqueta a la izquierda del desplegable, como los filtros de la vista
+   principal: la fila mide lo que el control, no el doble */
+.incidencias-head .field {
+  flex: none;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+}
+
+.incidencias-head .field > label { white-space: nowrap; }
+
+.incidencias-head .field .select { width: 132px; }
 
 /* Encabezados que ordenan la tabla de incidencias */
 .preview-table__th--sortable {

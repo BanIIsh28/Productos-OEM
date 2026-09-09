@@ -1647,22 +1647,25 @@
 
     var body = el('div', 'preview');
 
-    /* ---- Encabezado: archivo, fecha, usuario y los contadores ---- */
-    var resumen = el('div', 'preview__summary form-grid');
+    /* ---- Encabezado: archivo, fecha, usuario y los contadores ----
+
+       Los ocho datos caben en una sola fila: esta ventana apila muchos
+       bloques y cada renglón de más la empuja fuera de la pantalla. */
+    var resumen = el('div', 'preview__summary preview__summary--fila');
 
     var datos = [
-      ['Archivo', nombreArchivo, 2],
-      ['Fecha', fechaTexto(new Date()), 2],
-      ['Usuario', USUARIO_SESION, 2],
-      ['Filas útiles', String(revisiones.length), 2]
+      ['Archivo', nombreArchivo],
+      ['Fecha', fechaTexto(new Date())],
+      ['Usuario', USUARIO_SESION],
+      ['Filas útiles', String(revisiones.length)]
     ];
 
     CLASES_PREVIA.forEach(function (c) {
-      datos.push([c.etiqueta, String(deClase(c.clase).length), 1]);
+      datos.push([c.etiqueta, String(deClase(c.clase).length)]);
     });
 
     datos.forEach(function (dato) {
-      var campo = textField(dato[0], dato[2], { value: dato[1], readOnly: true });
+      var campo = textField(dato[0], 1, { value: dato[1], readOnly: true });
       campo._input.title = dato[1];
       resumen.appendChild(campo);
     });
