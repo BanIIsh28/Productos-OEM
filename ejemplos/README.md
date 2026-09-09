@@ -1,6 +1,6 @@
 # Archivos de ejemplo para la importación
 
-Ambos siguen la estructura de la plantilla que descarga el módulo: `SKU`,
+Ambos siguen la estructura de la plantilla que descarga el módulo: `Código`,
 `Proveedor`, `Tipo`, `Código externo`, `Alcance`, `Empaque`, `Cantidad` y
 `Estatus`.
 
@@ -16,10 +16,10 @@ correcto —uno de 13 dígitos, el mismo de 14 con su cero a la izquierda y uno 
 12— y dos `No GS1` con código propietario. Los `GS1` se cargan en su forma
 canónica de 14 posiciones.
 
-Los SKU corresponden a productos del catálogo del módulo y los proveedores a
+Los códigos corresponden a productos del catálogo del módulo y los proveedores a
 nombres de su lista:
 
-| SKU | Producto que resuelve |
+| Código | Producto que resuelve |
 | --- | --- |
 | 1001000 | Balata delantera cerámica — Nissan Tsuru 1.6 |
 | 1023711 | Filtro de aceite — Ford Ranger 2.5 |
@@ -33,8 +33,8 @@ Cinco registros con un problema distinto cada uno, para probar la verificación:
 
 | Fila | Problema |
 | --- | --- |
-| 2 | `SKU` vacío |
-| 3 | `SKU` 9999999, que no existe en el catálogo |
+| 2 | `Código` vacío |
+| 3 | `Código` 9999999, que no existe en el catálogo |
 | 4 | Proveedor que no está en la lista |
 | 5 | `Tipo` `GS1` con dígito verificador inválido (`7501234567899`), `Empaque` en `Unidad` con alcance `Presentación` y `Cantidad` decimal (`2.5`) |
 | 6 | `Tipo` `GS1` con la etiqueta completa en vez del GTIN (`(01)07501234567893`), `Alcance` ajeno (`Surtido`), `Cantidad` no numérica (`doce`) y `Estatus` desconocido (`Suspendido`) |

@@ -463,12 +463,12 @@ a:hover { color: rgb(0, 50, 90); }
 
 .table {
   display: grid;
-  /* SKU, Proveedor, Código externo y Alcance comparten ancho; Tipo,
+  /* Código, Proveedor, Código externo y Alcance comparten ancho; Tipo,
      Cantidad, Estatus y Acciones son más angostas. Empaque dejó de ser
      un número para pasar a ser el nivel de empaque, así que necesita
      sitio para "Caja máster". */
   grid-template-columns:
-    minmax(0, 1fr)                /* SKU */
+    minmax(0, 1fr)                /* Código */
     minmax(0, 1fr)                /* Proveedor */
     minmax(0, 0.55fr)             /* Tipo */
     minmax(0, 1fr)                /* Código externo */
@@ -934,7 +934,7 @@ a:hover { color: rgb(0, 50, 90); }
 .field .select__trigger:focus-visible { border-color: rgb(0, 75, 131); }
 
 /* Estilo reservado para los campos de solo lectura de las ventanas:
-   el mismo del campo "SKU". Se aplica con el atributo readonly o con
+   el mismo del campo "Código". Se aplica con el atributo readonly o con
    la clase, para poder reutilizarlo en cualquier formulario. */
 .field input[readonly],
 .field .input--readonly {
@@ -1088,7 +1088,7 @@ a:hover { color: rgb(0, 50, 90); }
   display: grid;
   grid-template-columns:
     44px                  /* Fila */
-    minmax(0, 0.8fr)      /* SKU */
+    minmax(0, 0.8fr)      /* Código */
     minmax(0, 1.5fr)      /* Proveedor */
     minmax(0, 0.6fr)      /* Tipo */
     minmax(0, 1fr)        /* Código externo */
@@ -1168,7 +1168,7 @@ a:hover { color: rgb(0, 50, 90); }
   grid-template-columns:
     minmax(0, 1.05fr)   /* Fecha y hora */
     minmax(0, 0.6fr)    /* Usuario */
-    minmax(0, 0.7fr)    /* SKU */
+    minmax(0, 0.7fr)    /* Código */
     minmax(0, 1.45fr)   /* Proveedor */
     minmax(0, 0.85fr)   /* Acción */
     minmax(0, 1fr)      /* Campo */

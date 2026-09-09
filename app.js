@@ -11,7 +11,7 @@
      control  la celda contiene un control, no texto                   */
 
   var columns = [
-    { label: 'SKU', sortable: true, numeric: true, search: true },
+    { label: 'Código', sortable: true, numeric: true, search: true },
     { label: 'Proveedor', sortable: true, search: true },
     { label: 'Tipo' },
     { label: 'Código externo', numeric: true, search: true },
@@ -221,7 +221,7 @@
 
   /* ---------- Destino APYMSA (RD-MOD-01) ----------
 
-     El destino de una equivalencia es SKU + alcance + nivel de empaque
+     El destino de una equivalencia es código + alcance + nivel de empaque
      + cantidad. Un alcance de "Producto" apunta a la unidad suelta, de
      modo que su nivel y su cantidad son implícitos —Unidad y 1— y no
      los captura nadie; los niveles agrupados solo existen dentro de una
@@ -278,8 +278,9 @@
     return tipo === 'GS1' ? randomGtin() : randomCodigoPropio();
   }
 
-  /* Cada fila es [SKU, proveedor, tipo, código, alcance, empaque, cantidad, activo].
-     El SKU corresponde a un producto del catálogo, de modo que al editar
+  /* Cada fila es [código, proveedor, tipo, código externo, alcance, empaque,
+     cantidad, activo]. El código corresponde a un producto del catálogo,
+     de modo que al editar
      un registro se pueda resolver el nombre del producto. */
   var dataRows = (function buildRows() {
     var rows = [];
@@ -355,7 +356,7 @@
      historial: el rastro no depende de que quien llame se acuerde de
      anotarlo. */
 
-  var CAMPOS = ['SKU', 'Proveedor', 'Tipo', 'Código externo', 'Alcance',
+  var CAMPOS = ['Código', 'Proveedor', 'Tipo', 'Código externo', 'Alcance',
                 'Empaque', 'Cantidad', 'Estatus'];
 
   /* Identificadores del personal de operaciones: cinco dígitos como máximo */
@@ -637,7 +638,7 @@
       btn.classList.toggle('switch--on', activo);
       btn.setAttribute('aria-checked', String(activo));
       btn.title = activo ? 'Activo' : 'Inactivo';
-      btn.setAttribute('aria-label', 'Estatus del SKU ' + row[COL_SKU] +
+      btn.setAttribute('aria-label', 'Estatus del código ' + row[COL_SKU] +
         ': ' + (activo ? 'activo' : 'inactivo'));
     }
 
@@ -647,7 +648,7 @@
       confirmModal({
         title: activar ? 'Activar estatus' : 'Desactivar estatus',
         message: '¿Deseas ' + (activar ? 'activar' : 'desactivar') +
-          ' el estatus de la equivalencia del SKU ' + row[COL_SKU] + '?',
+          ' el estatus de la equivalencia del código ' + row[COL_SKU] + '?',
         onAccept: function () {
           commitEstatus(row, activar);
           paint();
@@ -664,7 +665,7 @@
     var btn = el('button', 'icon-btn icon-btn--amber');
     btn.type = 'button';
     btn.title = 'Editar';
-    btn.setAttribute('aria-label', 'Editar el SKU ' + row[COL_SKU]);
+    btn.setAttribute('aria-label', 'Editar el código ' + row[COL_SKU]);
     btn.insertAdjacentHTML('beforeend', PENCIL_SVG);
     btn.addEventListener('click', function () { openEquivalenceModal(row); });
     return btn;
@@ -906,7 +907,7 @@
 
   /* Plantilla de carga: encabezados y una fila de ejemplo */
   /* Plantilla: la fila de ejemplo pasa la propia verificación del
-     módulo —SKU del catálogo, proveedor registrado, GTIN con dígito
+     módulo —código del catálogo, proveedor registrado, GTIN con dígito
      verificador correcto y destino conforme—, de modo que descargarla e
      importarla tal cual funcione sin retocar nada. */
   var TEMPLATE_ROW = [
@@ -965,7 +966,7 @@
 
   /* ---------- Verificación del archivo por importar ---------- */
 
-  var COLUMNAS_ARCHIVO = ['SKU', 'Proveedor', 'Tipo', 'Código externo',
+  var COLUMNAS_ARCHIVO = ['Código', 'Proveedor', 'Tipo', 'Código externo',
     'Alcance', 'Empaque', 'Cantidad', 'Estatus'];
 
   var ESTATUS = ['Activo', 'Inactivo'];
@@ -990,13 +991,13 @@
       if (!errores[indice]) { errores[indice] = mensaje; }
     }
 
-    /* SKU */
+    /* Código de producto */
     if (!valores[0]) {
-      fallo(0, 'El SKU está vacío');
+      fallo(0, 'El código está vacío');
     } else if (!/^\d+$/.test(valores[0])) {
-      fallo(0, 'El SKU debe ser numérico');
+      fallo(0, 'El código debe ser numérico');
     } else if (!existeProducto(valores[0])) {
-      fallo(0, 'El SKU no existe en el catálogo');
+      fallo(0, 'El código no existe en el catálogo');
     }
 
     /* Proveedor */
@@ -1210,13 +1211,13 @@
 
      Consulta filtrable del historial. Los filtros son los mismos que
      los de la tabla del catálogo —uno por columna, con Enter y un
-     mínimo de caracteres— y se combinan entre sí: un SKU y un usuario
-     dejan solo los cambios de ese usuario sobre ese SKU. */
+     mínimo de caracteres— y se combinan entre sí: un código y un usuario
+     dejan solo los cambios de ese usuario sobre ese registro. */
 
   var LOG_COLUMNAS = [
     { label: 'Fecha y hora', key: 'fechaTexto', search: true, hint: 'dd/mm/aaaa hh:mm' },
     { label: 'Usuario', key: 'usuario', search: true },
-    { label: 'SKU', key: 'sku', search: true },
+    { label: 'Código', key: 'sku', search: true },
     { label: 'Proveedor', key: 'proveedor', search: true, text: true },
     { label: 'Acción', key: 'accion' },
     { label: 'Campo', key: 'campo' },
@@ -1662,9 +1663,9 @@
     var nombreProducto = textField('Nombre del producto', 4, { readOnly: true });
     if (editando) { nombreProducto._input.value = productoDe(registro[COL_SKU]); }
 
-    var sku = suggestField('SKU', 2, {
+    var sku = suggestField('Código', 2, {
       digitsOnly: true,
-      placeholder: 'Código',
+      placeholder: 'Código de producto',
       search: function (texto) {
         return CATALOGO.filter(function (p) {
           return p.codigo.indexOf(texto) !== -1;
@@ -1906,7 +1907,7 @@
         cantidad: destino.cantidad
       };
 
-      /* El SKU y el proveedor deben corresponder a un registro existente */
+      /* El código y el proveedor deben corresponder a un registro existente */
       var producto = CATALOGO.filter(function (p) {
         return p.codigo === valores.sku;
       })[0];
@@ -1929,7 +1930,7 @@
       var revisionCodigo = revisarCodigo();
       var codigoVacio = revisionCodigo.motivo === 'vacio';
 
-      if (!producto) { faltantes.push('SKU'); }
+      if (!producto) { faltantes.push('Código'); }
       if (!proveedorValido) { faltantes.push('Proveedor'); }
       if (valores.tipo === SIN_TIPO) { faltantes.push('Tipo'); }
       if (valores.alcance === SIN_ALCANCE) { faltantes.push('Alcance'); }
@@ -2064,8 +2065,8 @@
     var visible = filteredRows().indexOf(row) !== -1;
 
     showToast(visible
-      ? 'Se agregó la equivalencia del SKU ' + row[COL_SKU]
-      : 'Se agregó la equivalencia del SKU ' + row[COL_SKU] +
+      ? 'Se agregó la equivalencia del código ' + row[COL_SKU]
+      : 'Se agregó la equivalencia del código ' + row[COL_SKU] +
         ', aunque no se muestra con los filtros aplicados', visible ? 'success' : 'warning');
 
     /* El resaltado dura lo mismo que el aviso */
@@ -2087,8 +2088,8 @@
     var visible = filteredRows().indexOf(registro) !== -1;
 
     showToast(visible
-      ? 'Se actualizó la equivalencia del SKU ' + registro[COL_SKU]
-      : 'Se actualizó la equivalencia del SKU ' + registro[COL_SKU] +
+      ? 'Se actualizó la equivalencia del código ' + registro[COL_SKU]
+      : 'Se actualizó la equivalencia del código ' + registro[COL_SKU] +
         ', aunque ya no se muestra con los filtros aplicados', visible ? 'success' : 'warning');
 
     clearTimeout(resaltadoTimer);

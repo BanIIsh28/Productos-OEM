@@ -21,7 +21,7 @@ componentes e iconografía).
 
 | Columna | Contenido |
 | --- | --- |
-| SKU | código de 7 dígitos |
+| Código | código de producto, de 7 dígitos |
 | Proveedor | nombre de distribuidor de autopartes |
 | Tipo | `GS1` o `No GS1` |
 | Código externo | GTIN canónico de 14 dígitos si el tipo es `GS1`; código propietario si es `No GS1` |
@@ -36,7 +36,7 @@ dentro de esos rangos, con el destino ya conforme a la regla RD-MOD-01 —los de
 alcance `Producto` llevan `Unidad` y `1`, y los de `Presentación`, un nivel
 agrupado y su cantidad— y con el código externo coherente con su tipo: los `GS1`
 llevan un GTIN-14 con dígito verificador correcto y los `No GS1`, un código
-propietario alfanumérico. `SKU`, `Proveedor`, `Código externo` y `Alcance` comparten
+propietario alfanumérico. `Código`, `Proveedor`, `Código externo` y `Alcance` comparten
 ancho; `Tipo`, las de un solo número y las de control son más angostas, y
 cualquier valor más largo que su columna continúa en el siguiente renglón.
 
@@ -57,7 +57,7 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
 - **Botones deshabilitados**: el gris `rgb(211, 211, 211)` está reservado para
   este estado (por ejemplo `Filtrar`), sin efecto hover.
 - **Filtrado por columna**: cada campo `Buscar` del encabezado filtra únicamente
-  su propia columna —solo `SKU`, `Proveedor` y `Código externo` lo llevan—,
+  su propia columna —solo `Código`, `Proveedor` y `Código externo` lo llevan—,
   buscando entre **todos** los registros y no solo entre los visibles en la página
   actual. El filtro se ejecuta al pulsar `Enter` y requiere un mínimo de 3
   caracteres; con menos, el campo se marca en rojo y no filtra. Los filtros
@@ -72,7 +72,7 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
   las flechas `<` y `>` sin destino quedan deshabilitados. Filtrar u ordenar
   devuelve a la primera página.
 - **Ordenamiento por columna**: las flechas del encabezado ordenan la tabla al
-  hacer clic sobre él, solo en `SKU` (orden numérico) y `Proveedor` (orden
+  hacer clic sobre él, solo en `Código` (orden numérico) y `Proveedor` (orden
   alfabético). Cada clic alterna ascendente y descendente, y la flecha del
   sentido activo se resalta.
 
@@ -85,7 +85,7 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
   `Plantilla-Productos-OEM.xlsx`, un archivo con los mismos encabezados y una
   fila de ejemplo, pensado para llenar y volver a cargar con `Importar`. Es
   siempre idéntico, sin importar los filtros activos. La fila de ejemplo pasa la
-  propia verificación del módulo —SKU del catálogo, proveedor registrado, GTIN
+  propia verificación del módulo —código del catálogo, proveedor registrado, GTIN
   con dígito verificador correcto y destino conforme—, así que descargarla e
   importarla tal cual da un registro correcto sin retocar nada.
 
@@ -134,7 +134,7 @@ llega a superar la altura de la pantalla, quien se desplaza es el fondo.
 
 Los campos comparten la altura de los desplegables de los filtros (28 px) y el
 texto va a 12 px, salvo el título de la cabecera, a 14 px. El estilo del campo de
-solo lectura —el de `SKU`— queda reservado en `.field input[readonly]`, también
+solo lectura —el de `Código`— queda reservado en `.field input[readonly]`, también
 disponible como clase `.input--readonly` para reutilizarlo en otros formularios.
 
 ### Ventana de confirmación
@@ -146,7 +146,7 @@ ejecuta la acción.
 
 El interruptor de la columna `Estatus` la usa: antes de aplicar el cambio pregunta
 si de verdad se quiere activar o desactivar el estatus de esa equivalencia,
-nombrando su SKU. Cancelar, cerrar con la `X` o pulsar `Escape` deja el estatus
+nombrando su código. Cancelar, cerrar con la `X` o pulsar `Escape` deja el estatus
 como estaba.
 
 ### Ventana de importación
@@ -170,7 +170,7 @@ registros y otro de quinientos se presentan igual de bien.
 
 Cada registro con algún problema se muestra sobre fondo rojizo, con el dato
 concreto recuadrado y el detalle del error en la última columna; los correctos
-llevan la palabra `Correcto`. Se comprueba que el SKU exista en el catálogo, que
+llevan la palabra `Correcto`. Se comprueba que el código exista en el catálogo, que
 el proveedor esté registrado, que el tipo sea `GS1` o `No GS1`, que el código
 externo cumpla la norma de su tipo declarado —longitud y dígito verificador si es
 `GS1`, solo no estar vacío si es `No GS1`—, que el alcance sea `Producto` o
@@ -201,12 +201,12 @@ El formulario es:
 
 | Fila | Campos |
 | --- | --- |
-| 1 | `SKU` (código, con búsqueda) y `Nombre del producto` (solo lectura) |
+| 1 | `Código` (con búsqueda) y `Nombre del producto` (solo lectura) |
 | 2 | `Proveedor` (con búsqueda) |
 | 3 | `Tipo` y `Código externo` |
 | 4 | `Alcance`, `Empaque` y `Cantidad` — el destino |
 
-`SKU` admite solo dígitos y, a partir de 3, despliega los productos del catálogo
+`Código` admite solo dígitos y, a partir de 3, despliega los productos del catálogo
 cuyo código contiene lo escrito, mostrando el código seguido del nombre. Se ven
 cinco a la vez y el resto se alcanza desplazando la lista; al elegir uno se
 llenan el código y el nombre. `Proveedor` funciona igual sobre los nombres de
@@ -214,7 +214,7 @@ proveedores. `Alcance` arranca en `- Selecciona un alcance -`.
 
 #### El destino (RD-MOD-01)
 
-El destino de una equivalencia es **SKU + alcance + nivel de empaque + cantidad**,
+El destino de una equivalencia es **código + alcance + nivel de empaque + cantidad**,
 y los dos últimos dependen del alcance:
 
 | Alcance | Nivel de empaque | Cantidad |
@@ -296,13 +296,13 @@ rechaza también la importación y al revés.
 
 El catálogo se inventa al cargar la vista: 30 familias de refacción por 30
 aplicaciones, 900 productos con código de 7 dígitos agrupados por familia. Los
-registros de la tabla toman su SKU de ese catálogo, de modo que al editar uno se
+registros de la tabla toman su código de ese catálogo, de modo que al editar uno se
 pueda resolver el nombre de su producto.
 
 `Guardar` permanece deshabilitado, en un verde más claro (`#95D195`), mientras el
 formulario esté incompleto, y toma su color pleno al quedar todo capturado. Un
 campo visitado que siga vacío o inválido se resalta en rojo también en reposo,
-hasta que tenga un valor válido. El SKU y el proveedor deben corresponder a un
+hasta que tenga un valor válido. El código y el proveedor deben corresponder a un
 registro existente: no basta escribirlos, hay que elegirlos de la lista. Con todo capturado, la equivalencia se añade al
 principio de la tabla: se retira el orden y se vuelve a la primera página para
 dejarla a la vista, queda resaltada unos segundos y un toast lo confirma —o
@@ -337,11 +337,11 @@ distingue por color: `Alta` en verde, `Edición` en ámbar, `Baja` en rojo y
 `Reactivación` en el azul del módulo.
 
 La vista se ordena de lo más reciente a lo más antiguo y se filtra por `Fecha y
-hora`, `Usuario`, `SKU` y `Proveedor`, con los mismos campos `Buscar` del
+hora`, `Usuario`, `Código` y `Proveedor`, con los mismos campos `Buscar` del
 encabezado que usa la tabla del catálogo: `Enter` para ejecutar, mínimo 3
 caracteres, vaciar el campo retira su filtro y la comparación ignora mayúsculas y
 acentos. **Los cuatro filtros se combinan entre sí**, de modo que un usuario y un
-SKU dejan solo los cambios de esa persona sobre ese registro. La fecha se busca
+código dejan solo los cambios de esa persona sobre ese registro. La fecha se busca
 sobre el texto `dd/mm/aaaa hh:mm`, así que `09/2026` acota un mes y `04/09` un día.
 Los filtros se conservan al cerrar y reabrir la ventana, para retomar la consulta.
 
