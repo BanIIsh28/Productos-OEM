@@ -342,6 +342,11 @@ y los dos últimos dependen del alcance:
 | `Producto` | fijo en `Unidad`, no se captura | fija en `1`, no se captura |
 | `Presentación` | obligatorio: `Inner`, `Caja máster` o `Pallet` | obligatoria: entero ≥ 1 |
 
+En la carga masiva, incumplir la regla se reporta con `VAL-EMP-001` cuando el
+alcance es `Producto` y el nivel o la cantidad no son `Unidad` y `1`, y con
+`VAL-EMP-002` cuando el alcance es `Presentación` y el nivel o la cantidad no
+sirven. Que falte el dato sigue siendo `VAL-EST-004`, campo vacío.
+
 `Empaque` es un desplegable que arranca en `- Selecciona un empaque -` y solo
 ofrece los tres niveles agrupados; `Unidad` no está entre sus opciones porque
 nunca se elige a mano. Con alcance `Producto`, los dos campos conservan su sitio
@@ -383,16 +388,23 @@ El tipo declarado decide con qué norma se valida el código:
 dígito verificador real de GS1: suma ponderada del cuerpo con pesos alternos 3 y
 1, empezando con 3 en el dígito inmediatamente a la izquierda del verificador.
 No es Luhn, que alterna 2 y 1 y arrastra los productos de dos cifras. Cada
-rechazo lleva su mensaje:
+rechazo lleva su código y su mensaje, de modo que el desglose de la
+previsualización distinga un verificador mal de una etiqueta pegada:
 
-| Caso | Mensaje |
-| --- | --- |
-| Verificador que no cuadra | `El código GS1 tiene un dígito verificador inválido` |
-| Longitud fuera de 8/12/13/14 | `El código GS1 tiene una longitud inválida (se esperan 8, 12, 13 o 14 dígitos)` |
-| Cadena GS1-128, con o sin paréntesis | `El código parece una etiqueta GS1-128 completa, captura solo el GTIN` |
-| SSCC de 18 dígitos | `El código es un SSCC de 18 dígitos, captura solo el GTIN` |
-| Caracteres que no son dígitos | `El código GS1 debe contener solo dígitos` |
-| Sin capturar | `El código externo está vacío` |
+| Caso | Código | Mensaje |
+| --- | --- | --- |
+| Verificador que no cuadra | `VAL-GS1-003` | `El código GS1 tiene un dígito verificador inválido` |
+| Longitud fuera de 8/12/13/14 | `VAL-GS1-002` | `El código GS1 tiene una longitud inválida (se esperan 8, 12, 13 o 14 dígitos)` |
+| Caracteres que no son dígitos | `VAL-GS1-002` | `El código GS1 debe contener solo dígitos` |
+| Cadena GS1-128, con o sin paréntesis | `VAL-GS1-004` | `El código parece una etiqueta GS1-128 completa, captura solo el GTIN` |
+| SSCC de 18 dígitos | `VAL-GS1-005` | `El código es un SSCC de 18 dígitos, captura solo el GTIN` |
+| Sin capturar | `VAL-EST-004` | `El código externo está vacío` |
+
+El mapa `MOTIVO_A_CODIGO_GS1` traduce el `motivo` que ya devolvía
+`validarCodigoExterno` al código de la historia; la lógica de validación no
+cambia. `VAL-GS1-001` (tipo de identificador no admitido) queda declarado en el
+catálogo, aunque hoy no lo dispara ningún caso: el tipo se valida antes, en su
+propia columna.
 
 Un GTIN correcto se guarda en su **forma canónica de 14 posiciones**, rellenando
 con ceros a la izquierda. Solo rellena, nunca recorta: `7501234567893` y

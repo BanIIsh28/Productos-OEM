@@ -210,6 +210,23 @@
     return CODIGO_ACEPTADO;
   }
 
+  /* Cada motivo de rechazo de un GS1 tiene su propio código en la
+     historia, para que el desglose de la previsualización distinga un
+     dígito verificador mal de una etiqueta pegada en lugar del GTIN.
+     El motivo 'vacio' no está aquí: es un campo sin capturar y se
+     reporta como tal. */
+  var MOTIVO_A_CODIGO_GS1 = {
+    'no-digitos': 'VAL-GS1-002',
+    'longitud': 'VAL-GS1-002',
+    'verificador': 'VAL-GS1-003',
+    'etiqueta': 'VAL-GS1-004',
+    'sscc': 'VAL-GS1-005'
+  };
+
+  function codigoDeMotivoGs1(motivo) {
+    return MOTIVO_A_CODIGO_GS1[motivo] || 'VAL-EST-005';
+  }
+
   /* Valor con el que se guarda el código: el GTIN en su forma canónica
      cuando el tipo es GS1, y el texto tal cual cuando es propietario */
   function codigoCanonico(tipo, codigo) {
@@ -235,6 +252,10 @@
   function esAlcanceProducto(alcance) { return alcance === 'Producto'; }
 
   function nivelValido(nivel) { return NIVELES_EMPAQUE.indexOf(nivel) !== -1; }
+
+  /* Un solo texto para el rechazo de la cantidad, compartido por el alta
+     manual y la carga masiva */
+  var MSG_CANTIDAD_INVALIDA = 'La cantidad debe ser un número entero mayor o igual a 1';
 
   /* Cantidad admisible: entero decimal mayor o igual que 1. Descarta
      vacíos, decimales, negativos, el cero y lo no numérico. */
@@ -1069,11 +1090,47 @@
       severidad: 'ERROR',
       correccion: 'Divide la carga en archivos de 50,000 filas o menos.'
     },
-    /* TODO: código supuesto, pendiente de confirmar con la historia */
-    'VAL-CAM-004': {
-      alias: 'Destino incompatible con el alcance',
+    /* Rechazos de un código declarado como GS1, uno por motivo */
+    'VAL-GS1-001': {
+      alias: 'Tipo de identificador GS1 no admitido',
       severidad: 'ERROR',
-      correccion: 'Ajusta el nivel de empaque y la cantidad al alcance de la fila.'
+      correccion: 'Declara uno de los tipos de identificador que admite la carga.'
+    },
+    'VAL-GS1-002': {
+      alias: 'Longitud o caracteres inválidos en el código GS1',
+      severidad: 'ERROR',
+      correccion: 'Un GTIN son 8, 12, 13 o 14 dígitos, sin letras ni separadores.'
+    },
+    'VAL-GS1-003': {
+      alias: 'Dígito verificador GS1 inválido',
+      severidad: 'ERROR',
+      correccion: 'Verifica el código de barras contra el producto físico o el ' +
+        'catálogo del proveedor.'
+    },
+    'VAL-GS1-004': {
+      alias: 'Cadena GS1-128 completa en lugar del identificador',
+      severidad: 'ERROR',
+      correccion: 'Captura solo el GTIN, sin los identificadores de aplicación ' +
+        'que acompañan a la etiqueta.'
+    },
+    'VAL-GS1-005': {
+      alias: 'SSCC del AI (00) en lugar del identificador',
+      severidad: 'ERROR',
+      correccion: 'El SSCC identifica una unidad logística, no un producto: ' +
+        'captura el GTIN.'
+    },
+    /* Destino que no corresponde al alcance de la fila */
+    'VAL-EMP-001': {
+      alias: 'Destino incompatible con Producto',
+      severidad: 'ERROR',
+      correccion: 'Con alcance Producto el nivel de empaque es ' + NIVEL_UNIDAD +
+        ' y la cantidad ' + CANTIDAD_UNIDAD + '; puedes dejar ambas celdas vacías.'
+    },
+    'VAL-EMP-002': {
+      alias: 'Destino incompatible con Presentación',
+      severidad: 'ERROR',
+      correccion: 'Elige un nivel de empaque distinto de ' + NIVEL_UNIDAD +
+        ' y una cantidad entera de 1 o más.'
     }
   };
 
@@ -1174,7 +1231,7 @@
         fallo(3, 'VAL-EST-005', 'El código externo pasa de ' + MAX_LARGO_CODIGO +
           ' caracteres (' + valores[3].length + ')');
       } else if (!revisionCodigo.valido) {
-        fallo(3, 'VAL-EST-005', revisionCodigo.mensaje);
+        fallo(3, codigoDeMotivoGs1(revisionCodigo.motivo), revisionCodigo.mensaje);
       } else {
         /* Un GS1 correcto se guarda en su forma canónica; un código
            propietario, tal cual */
@@ -1199,23 +1256,23 @@
       if (!valores[6]) { valores[6] = CANTIDAD_UNIDAD; }
 
       if (valores[5] !== NIVEL_UNIDAD) {
-        fallo(5, 'VAL-CAM-004', 'Con alcance Producto el empaque debe ser ' + NIVEL_UNIDAD);
+        fallo(5, 'VAL-EMP-001', 'Con alcance Producto el empaque debe ser ' + NIVEL_UNIDAD);
       }
       if (valores[6] !== CANTIDAD_UNIDAD) {
-        fallo(6, 'VAL-CAM-004', 'Con alcance Producto la cantidad debe ser ' + CANTIDAD_UNIDAD);
+        fallo(6, 'VAL-EMP-001', 'Con alcance Producto la cantidad debe ser ' + CANTIDAD_UNIDAD);
       }
     } else if (valores[4] === 'Presentación') {
       if (!valores[5]) {
         fallo(5, 'VAL-EST-004', 'El empaque está vacío');
       } else if (!nivelValido(valores[5])) {
-        fallo(5, 'VAL-CAM-004', 'Con alcance Presentación el empaque debe ser ' +
+        fallo(5, 'VAL-EMP-002', 'Con alcance Presentación el empaque debe ser ' +
           NIVELES_EMPAQUE.join(', '));
       }
 
       if (!valores[6]) {
         fallo(6, 'VAL-EST-004', 'La cantidad está vacía');
       } else if (!cantidadValida(valores[6])) {
-        fallo(6, 'VAL-EST-005', 'La cantidad debe ser un número entero mayor o igual a 1');
+        fallo(6, 'VAL-EMP-002', MSG_CANTIDAD_INVALIDA);
       }
     }
 
@@ -2759,7 +2816,7 @@
       }
 
       if (!cantidadOk && valores.cantidad !== '') {
-        problemas.push('La cantidad debe ser un número entero mayor o igual a 1');
+        problemas.push(MSG_CANTIDAD_INVALIDA);
       }
 
       marcar(sku, !producto);
