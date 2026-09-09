@@ -12,7 +12,7 @@ componentes e iconografía).
 | `styles.css` | Estilos completos de la interfaz. |
 | `app.js` | Datos de la vista y comportamiento (paginación, tabla, filtros, orden, exportación, bitácora y selects). |
 | `xlsx.js` | Generador de archivos `.xlsx` en el navegador, sin dependencias. |
-| `xlsx-read.js` | Lector de archivos `.xlsx` en el navegador (`readXlsx`). |
+| `xlsx-read.js` | Lector de archivos `.xlsx` en el navegador (`readXlsx`): localiza la hoja por su nombre visible y marca las celdas con fórmula. |
 | `toast.js` | Mensajes toast del módulo (`showToast`). |
 | `modal.js` | Ventanas modales del módulo (`openModal`). |
 | `assets/logo-apymsa.png` | Logotipo del encabezado del menú lateral. |
@@ -160,6 +160,38 @@ Al pulsar `Guardar` se lee el archivo —`xlsx-read.js` interpreta el `.xlsx` en
 navegador— y se revisa registro por registro. Después se abre la
 **previsualización**.
 
+#### Validaciones estructurales del archivo (VAL-EST-001 a 007)
+
+Se comprueban **antes** de mirar fila por fila. Las cinco primeras rechazan el
+archivo entero y la ventana termina en el mensaje, sin tabla que listar:
+
+| Código | Regla |
+| --- | --- |
+| `VAL-EST-001` | La hoja debe llamarse exactamente `Carga_Equivalencias`. Si no está o la renombraron, se rechaza sin adivinar otra hoja |
+| `VAL-EST-002` | Las columnas deben ser las de la plantilla: las mismas, con el mismo texto y en el mismo orden, sin faltantes, repetidas, renombradas, reordenadas ni de más |
+| `VAL-EST-003` | El archivo no tiene ninguna fila útil bajo los encabezados |
+| `VAL-EST-007` | Más de 50,000 filas útiles. Se revisa **primero**, para no gastar tiempo validando filas que se van a rechazar de todas formas |
+| `VAL-EST-004` | Campo obligatorio vacío. Un código externo de solo espacios queda vacío al recortarlo, y cuenta como campo sin capturar, no como problema de longitud |
+| `VAL-EST-005` | Valor que no cumple el tipo, el formato o el largo máximo de 50 caracteres del código externo. La longitud se mide **ya recortada**, para que un espacio de más no provoque un rechazo que el valor real no merece |
+| `VAL-EST-006` | La celda del código externo es una **fórmula** |
+
+`VAL-EST-006` mira lo que el XML guarda, no lo que el valor parece: Excel escribe
+un elemento `<f>` en las celdas calculadas. Un texto literal que empiece por `=`,
+`+`, `-` o `@` no lleva `<f>` y **no** se rechaza, porque un código propietario
+puede legítimamente empezar así.
+
+Para poder aplicar estas dos reglas hubo que rehacer el lector `xlsx-read.js`:
+antes tomaba la primera hoja física del ZIP sin mirar su nombre, y no distinguía
+una fórmula de un valor literal. Ahora resuelve el nombre visible de cada hoja
+—leyendo `xl/workbook.xml` y `xl/_rels/workbook.xml.rels` y cruzando el `r:id`
+con el `Target`— y devuelve, junto a las filas, un arreglo paralelo que dice qué
+celdas son fórmulas. `readXlsx(file, nombreHoja)` entrega
+`{ encontrada, hojas, filas, formulas }`.
+
+Los archivos que genera el módulo —plantilla, exportación y los dos de
+`ejemplos/`— usan la hoja `Carga_Equivalencias`, de modo que descargar y volver a
+cargar funcione sin retocar nada.
+
 #### Clasificación de las filas (ERB-51775)
 
 Cada fila útil del archivo recibe **exactamente una** clase:
@@ -223,6 +255,19 @@ alfabéticamente. **Pulsar un renglón deja en la tabla solo las filas de ese
 código**, y volver a pulsarlo retira el filtro. Al redondear a un decimal la suma
 de los porcentajes puede quedar en 99.9 % o 100.1 %.
 
+Sobre la tabla, una fila de **filtros combinables** —`Código`, `Columna afectada`
+y `Severidad`, cada uno con `Todos` por omisión y armado con los valores que de
+verdad aparecen en el archivo— y la **paginación**, con el mismo componente que la
+tabla del catálogo y la bitácora. El desplegable `Código` y el desglose están
+sincronizados: pulsar un renglón del desglose mueve también el filtro. En el pie,
+`Incidencias por página` con 25, 50, 75 y 100.
+
+Los encabezados `Fila` y `Detalle` **ordenan** la lista, con las mismas flechas de
+ascendente y descendente del catálogo: por número de fila del archivo y por código
+de incidencia. Filtrar o cambiar el orden vuelve a la primera página, y el
+encabezado de la ventana conserva siempre el **total real** de filas, no el de la
+página visible.
+
 Por último, la tabla de incidencias: **solo lista las filas con aviso o con
 error**. Las que no tienen incidencia únicamente se cuentan en el encabezado,
 para no obligar a buscar el problema entre cientos de filas correctas; cuando no
@@ -240,10 +285,8 @@ azul fijo, y la ventana ya no crece más.
 línea en `app.js` con valores razonables, pendiente de venir de una fuente
 externa. Los códigos `VAL-MAE-001/002` y `VAL-UNI-001/003/004/005` son los de la
 historia; los de la familia `VAL-CAM-*` son una suposición consistente con el
-patrón y llevan su `TODO`. Quedan fuera de este alcance las validaciones
-estructurales `VAL-EST-001` a `VAL-EST-007` (nombre de hoja, estructura exacta de
-columnas, longitud máxima, fórmulas de Excel, límite de filas), el filtrado por
-columna y severidad, y la paginación de incidencias.
+patrón y llevan su `TODO`. Queda fuera de este alcance la clave canónica
+distinta por clase de RD-MOD-02.
 
 #### Qué se revisa en cada fila
 

@@ -1,6 +1,7 @@
 # Archivos de ejemplo para la importación
 
-Ambos siguen la estructura de la plantilla que descarga el módulo: `Código`,
+Ambos traen la hoja `Carga_Equivalencias` con la estructura de la plantilla que
+descarga el módulo: `Código`,
 `Proveedor`, `Tipo`, `Código externo`, `Alcance`, `Empaque`, `Cantidad` y
 `Estatus`.
 

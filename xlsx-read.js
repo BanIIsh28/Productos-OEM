@@ -2,7 +2,13 @@
 
    Un .xlsx es un ZIP con XML dentro. Aquí se localizan las entradas por
    su directorio central, se descomprimen con DecompressionStream y se
-   interpreta la primera hoja. Devuelve las filas como texto. */
+   interpreta la hoja que se pida POR SU NOMBRE VISIBLE, no por su
+   posición: el nombre vive en xl/workbook.xml y se resuelve al archivo
+   físico a través de xl/_rels/workbook.xml.rels.
+
+   Devuelve las filas como texto y, en paralelo, qué celdas son fórmulas
+   —las que el XML guarda con un elemento <f>—, dato que no se puede
+   deducir del valor y que hace falta para rechazarlas. */
 
 (function (global) {
   'use strict';
@@ -108,14 +114,18 @@
     return strings;
   }
 
+  /* Devuelve { filas, formulas }: dos arreglos paralelos, con el texto
+     de cada celda y con si esa celda es una fórmula. */
   function parseSheet(xml, strings) {
     var doc = new DOMParser().parseFromString(xml, 'application/xml');
     var rows = doc.getElementsByTagName('row');
-    var salida = [];
+    var filas = [];
+    var formulas = [];
 
     for (var r = 0; r < rows.length; r++) {
       var celdas = rows[r].getElementsByTagName('c');
       var fila = [];
+      var esFormula = [];
 
       for (var c = 0; c < celdas.length; c++) {
         var celda = celdas[c];
@@ -135,39 +145,117 @@
           valor = n ? n.textContent : '';
         }
 
+        /* Una celda calculada guarda su fórmula en <f>, además del
+           último valor conocido en <v>. Un texto que empiece por "=" no
+           lleva <f> y por tanto no es fórmula. */
+        var formula = celda.getElementsByTagName('f').length > 0;
+
         /* Las columnas omitidas en el XML quedan como cadena vacía */
-        while (fila.length < indice) { fila.push(''); }
+        while (fila.length < indice) { fila.push(''); esFormula.push(false); }
         fila[indice] = valor;
+        esFormula[indice] = formula;
       }
 
-      salida.push(fila);
+      filas.push(fila);
+      formulas.push(esFormula);
     }
 
-    return salida;
+    return { filas: filas, formulas: formulas };
+  }
+
+  /* ---------- Hojas por su nombre visible ---------- */
+
+  /* Relaciona cada r:id con el archivo físico al que apunta */
+  function parseRelaciones(xml) {
+    var mapa = {};
+    if (!xml) { return mapa; }
+
+    var doc = new DOMParser().parseFromString(xml, 'application/xml');
+    var items = doc.getElementsByTagName('Relationship');
+
+    for (var i = 0; i < items.length; i++) {
+      var destino = items[i].getAttribute('Target') || '';
+
+      /* Los destinos vienen relativos a xl/ o como ruta absoluta del paquete */
+      if (destino.charAt(0) === '/') {
+        destino = destino.replace(/^\//, '');
+      } else if (destino.indexOf('xl/') !== 0) {
+        destino = 'xl/' + destino;
+      }
+
+      mapa[items[i].getAttribute('Id')] = destino;
+    }
+
+    return mapa;
+  }
+
+  /* Nombre visible de cada hoja y el archivo que le corresponde */
+  function parseHojas(xml, relaciones) {
+    var hojas = [];
+    if (!xml) { return hojas; }
+
+    var doc = new DOMParser().parseFromString(xml, 'application/xml');
+    var items = doc.getElementsByTagName('sheet');
+
+    for (var i = 0; i < items.length; i++) {
+      /* El atributo lleva el prefijo del espacio de nombres de relaciones */
+      var id = items[i].getAttribute('r:id') ||
+        items[i].getAttributeNS(
+          'http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+
+      hojas.push({
+        nombre: items[i].getAttribute('name') || '',
+        archivo: relaciones[id] || null
+      });
+    }
+
+    return hojas;
   }
 
   /**
-   * Lee la primera hoja de un archivo .xlsx.
+   * Lee de un .xlsx la hoja que se pida por su nombre visible.
+   *
    * @param {File|Blob} file
-   * @returns {Promise<Array<Array<string>>>} filas, incluida la de encabezados
+   * @param {string} nombreHoja - nombre exacto de la hoja buscada
+   * @returns {Promise<{ encontrada: boolean, hojas: string[],
+   *                     filas: Array<Array<string>>,
+   *                     formulas: Array<Array<boolean>> }>}
+   *   'hojas' lista los nombres que sí trae el archivo, para poder decir
+   *   qué se encontró en su lugar. Si la hoja no está, 'filas' y
+   *   'formulas' vienen vacías: no se adivina otra.
    */
-  function readXlsx(file) {
+  function readXlsx(file, nombreHoja) {
     return file.arrayBuffer().then(function (buffer) {
       var zip = readEntries(new Uint8Array(buffer));
 
-      var hoja = zip.entries['xl/worksheets/sheet1.xml']
-        ? 'xl/worksheets/sheet1.xml'
-        : Object.keys(zip.entries).filter(function (nombre) {
-            return nombre.indexOf('xl/worksheets/') === 0 && /\.xml$/.test(nombre);
-          })[0];
-
-      if (!hoja) { throw new Error('El archivo no contiene ninguna hoja'); }
-
       return Promise.all([
-        readEntry(zip, hoja),
-        readEntry(zip, 'xl/sharedStrings.xml')
+        readEntry(zip, 'xl/workbook.xml'),
+        readEntry(zip, 'xl/_rels/workbook.xml.rels')
       ]).then(function (partes) {
-        return parseSheet(partes[0], parseSharedStrings(partes[1]));
+        var hojas = parseHojas(partes[0], parseRelaciones(partes[1]));
+        var nombres = hojas.map(function (h) { return h.nombre; });
+
+        var buscada = hojas.filter(function (h) {
+          return h.nombre === nombreHoja && h.archivo && zip.entries[h.archivo];
+        })[0];
+
+        if (!buscada) {
+          return { encontrada: false, hojas: nombres, filas: [], formulas: [] };
+        }
+
+        return Promise.all([
+          readEntry(zip, buscada.archivo),
+          readEntry(zip, 'xl/sharedStrings.xml')
+        ]).then(function (contenido) {
+          var hoja = parseSheet(contenido[0], parseSharedStrings(contenido[1]));
+
+          return {
+            encontrada: true,
+            hojas: nombres,
+            filas: hoja.filas,
+            formulas: hoja.formulas
+          };
+        });
       });
     });
   }

@@ -1253,6 +1253,35 @@ a:hover { color: rgb(0, 50, 90); }
   font-weight: 700;
 }
 
+/* Filtros y paginación de las incidencias */
+.incidencias-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.incidencias-head .field { width: 150px; flex: none; }
+
+/* Encabezados que ordenan la tabla de incidencias */
+.preview-table__th--sortable {
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.preview-table__th--sortable:hover { background: rgb(0, 60, 106); }
+
+.preview-table__th--sortable:focus-visible {
+  outline: 2px solid rgb(255, 255, 255);
+  outline-offset: -3px;
+}
+
+/* La flecha del sentido activo se resalta atenuando la contraria */
+.preview-table__th--asc .sort-desc,
+.preview-table__th--desc .sort-asc { opacity: 0.3; }
+
 /* Fila con incidencia informativa: ámbar en lugar de rojo */
 .preview-table__td--warn { background: rgb(253, 250, 242); }
 

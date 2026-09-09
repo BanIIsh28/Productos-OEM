@@ -894,7 +894,7 @@
     var name = 'Productos-OEM_' + timestamp() + '.xlsx';
 
     download(buildXlsx({
-      sheetName: 'Productos OEM',
+      sheetName: HOJA_CARGA,
       headers: headerLabels(),
       rows: rows.map(sheetRow),
       widths: SHEET_WIDTHS,
@@ -919,7 +919,7 @@
     var name = 'Plantilla-Productos-OEM.xlsx';
 
     download(buildXlsx({
-      sheetName: 'Plantilla',
+      sheetName: HOJA_CARGA,
       headers: headerLabels(),
       rows: [TEMPLATE_ROW],
       widths: SHEET_WIDTHS,
@@ -968,6 +968,19 @@
 
   var COLUMNAS_ARCHIVO = ['Código', 'Proveedor', 'Tipo', 'Código externo',
     'Alcance', 'Empaque', 'Cantidad', 'Estatus'];
+
+  /* Etiqueta de las incidencias que no señalan una columna concreta,
+     sino la fila entera */
+  var SIN_COLUMNA = 'Toda la fila';
+
+  /* Nombre exacto de la hoja que lee el importador. Los archivos que
+     genera el módulo la usan, para que descargar y volver a cargar
+     funcione sin retocar nada. */
+  var HOJA_CARGA = 'Carga_Equivalencias';
+
+  /* Topes estructurales del archivo */
+  var MAX_FILAS_UTILES = 50000;
+  var MAX_LARGO_CODIGO = 50;
 
   var ESTATUS = ['Activo', 'Inactivo'];
 
@@ -1018,22 +1031,45 @@
       correccion: 'La reactivación se hace desde la pantalla de baja y ' +
         'reactivación, no desde la carga masiva.'
     },
-    /* TODO: códigos supuestos, pendientes de confirmar con la historia */
-    'VAL-CAM-001': {
+    'VAL-EST-001': {
+      alias: 'Hoja "' + 'Carga_Equivalencias' + '" no encontrada',
+      severidad: 'ERROR',
+      correccion: 'Descarga la plantilla del módulo y captura sobre ella, ' +
+        'sin renombrar la hoja.'
+    },
+    'VAL-EST-002': {
+      alias: 'Estructura de columnas incorrecta',
+      severidad: 'ERROR',
+      correccion: 'La hoja debe traer exactamente las columnas de la plantilla, ' +
+        'en el mismo orden y sin columnas de más.'
+    },
+    'VAL-EST-003': {
+      alias: 'El archivo no tiene filas útiles',
+      severidad: 'ERROR',
+      correccion: 'Captura al menos un registro debajo de los encabezados.'
+    },
+    'VAL-EST-004': {
       alias: 'Campo obligatorio vacío',
       severidad: 'ERROR',
       correccion: 'Captura el dato que falta.'
     },
-    'VAL-CAM-002': {
-      alias: 'Valor no admitido para el campo',
+    'VAL-EST-005': {
+      alias: 'Valor con tipo, formato o longitud no admitidos',
       severidad: 'ERROR',
-      correccion: 'Usa uno de los valores que admite la columna.'
+      correccion: 'Corrige el valor para que cumpla lo que admite la columna.'
     },
-    'VAL-CAM-003': {
-      alias: 'Código externo inválido para su tipo',
+    'VAL-EST-006': {
+      alias: 'La celda contiene una fórmula',
       severidad: 'ERROR',
-      correccion: 'Corrige el código según la norma del tipo declarado.'
+      correccion: 'Sustituye la fórmula por su resultado como texto y vuelve ' +
+        'a guardar el archivo.'
     },
+    'VAL-EST-007': {
+      alias: 'El archivo supera el límite de filas',
+      severidad: 'ERROR',
+      correccion: 'Divide la carga en archivos de 50,000 filas o menos.'
+    },
+    /* TODO: código supuesto, pendiente de confirmar con la historia */
     'VAL-CAM-004': {
       alias: 'Destino incompatible con el alcance',
       severidad: 'ERROR',
@@ -1073,7 +1109,9 @@
      por columna, para poder recuadrar la celda que falla; 'incidencias'
      las lista en orden, que es lo que consumen el desglose por código y
      la tabla de la previsualización. */
-  function revisarFila(celdas) {
+  function revisarFila(celdas, formulas) {
+    var esFormula = formulas || [];
+
     var valores = COLUMNAS_ARCHIVO.map(function (_, i) {
       return String(celdas[i] === undefined || celdas[i] === null ? '' : celdas[i]).trim();
     });
@@ -1096,45 +1134,59 @@
 
     /* Código de producto */
     if (!valores[0]) {
-      fallo(0, 'VAL-CAM-001', 'El código está vacío');
+      fallo(0, 'VAL-EST-004', 'El código está vacío');
     } else if (!/^\d+$/.test(valores[0])) {
-      fallo(0, 'VAL-CAM-002', 'El código debe ser numérico');
+      fallo(0, 'VAL-EST-005', 'El código debe ser numérico');
     } else if (!existeProducto(valores[0])) {
       fallo(0, 'VAL-MAE-001', 'El código no existe o está inactivo en el catálogo');
     }
 
     /* Proveedor */
     if (!valores[1]) {
-      fallo(1, 'VAL-CAM-001', 'El proveedor está vacío');
+      fallo(1, 'VAL-EST-004', 'El proveedor está vacío');
     } else if (!existeProveedor(valores[1])) {
       fallo(1, 'VAL-MAE-002', 'El proveedor no está registrado');
     }
 
     /* Tipo */
     if (!valores[2]) {
-      fallo(2, 'VAL-CAM-001', 'El tipo está vacío');
+      fallo(2, 'VAL-EST-004', 'El tipo está vacío');
     } else if (TIPOS.indexOf(valores[2]) === -1) {
-      fallo(2, 'VAL-CAM-002', 'El tipo debe ser GS1 o No GS1');
+      fallo(2, 'VAL-EST-005', 'El tipo debe ser GS1 o No GS1');
     }
 
-    /* Código externo: se valida con la norma del tipo declarado en el
-       archivo, igual que en el alta manual. Un código GS1 correcto se
-       guarda en su forma canónica de 14 posiciones. */
-    var revisionCodigo = validarCodigoExterno(valores[2], valores[3]);
-
-    if (!revisionCodigo.valido) {
-      fallo(3, 'VAL-CAM-003', revisionCodigo.mensaje);
+    /* Código externo. Se revisa en este orden: que la celda no sea una
+       fórmula, que traiga algo, que no se pase de largo y, por último,
+       que cumpla la norma del tipo declarado. */
+    if (esFormula[3]) {
+      fallo(3, 'VAL-EST-006',
+        'La celda del código externo contiene una fórmula; captura su resultado como texto');
     } else {
-      /* Un GS1 correcto se guarda en su forma canónica; un código
-         propietario, tal cual */
-      valores[3] = codigoCanonico(valores[2], valores[3]);
+      var revisionCodigo = validarCodigoExterno(valores[2], valores[3]);
+
+      if (revisionCodigo.motivo === 'vacio') {
+        /* Un código de solo espacios queda vacío al recortarlo: es un
+           campo sin capturar, no un problema de longitud */
+        fallo(3, 'VAL-EST-004', 'El código externo está vacío');
+      } else if (valores[3].length > MAX_LARGO_CODIGO) {
+        /* La longitud se mide ya recortada, para que un espacio de más
+           no provoque un rechazo que el valor real no merece */
+        fallo(3, 'VAL-EST-005', 'El código externo pasa de ' + MAX_LARGO_CODIGO +
+          ' caracteres (' + valores[3].length + ')');
+      } else if (!revisionCodigo.valido) {
+        fallo(3, 'VAL-EST-005', revisionCodigo.mensaje);
+      } else {
+        /* Un GS1 correcto se guarda en su forma canónica; un código
+           propietario, tal cual */
+        valores[3] = codigoCanonico(valores[2], valores[3]);
+      }
     }
 
     /* Alcance */
     if (!valores[4]) {
-      fallo(4, 'VAL-CAM-001', 'El alcance está vacío');
+      fallo(4, 'VAL-EST-004', 'El alcance está vacío');
     } else if (ALCANCES.indexOf(valores[4]) === -1) {
-      fallo(4, 'VAL-CAM-002', 'El alcance debe ser Producto o Presentación');
+      fallo(4, 'VAL-EST-005', 'El alcance debe ser Producto o Presentación');
     }
 
     /* Nivel de empaque y cantidad: el destino depende del alcance.
@@ -1154,24 +1206,24 @@
       }
     } else if (valores[4] === 'Presentación') {
       if (!valores[5]) {
-        fallo(5, 'VAL-CAM-001', 'El empaque está vacío');
+        fallo(5, 'VAL-EST-004', 'El empaque está vacío');
       } else if (!nivelValido(valores[5])) {
         fallo(5, 'VAL-CAM-004', 'Con alcance Presentación el empaque debe ser ' +
           NIVELES_EMPAQUE.join(', '));
       }
 
       if (!valores[6]) {
-        fallo(6, 'VAL-CAM-001', 'La cantidad está vacía');
+        fallo(6, 'VAL-EST-004', 'La cantidad está vacía');
       } else if (!cantidadValida(valores[6])) {
-        fallo(6, 'VAL-CAM-002', 'La cantidad debe ser un número entero mayor o igual a 1');
+        fallo(6, 'VAL-EST-005', 'La cantidad debe ser un número entero mayor o igual a 1');
       }
     }
 
     /* Estatus */
     if (!valores[7]) {
-      fallo(7, 'VAL-CAM-001', 'El estatus está vacío');
+      fallo(7, 'VAL-EST-004', 'El estatus está vacío');
     } else if (ESTATUS.indexOf(valores[7]) === -1) {
-      fallo(7, 'VAL-CAM-002', 'El estatus debe ser Activo o Inactivo');
+      fallo(7, 'VAL-EST-005', 'El estatus debe ser Activo o Inactivo');
     }
 
     return { valores: valores, errores: errores, incidencias: incidencias };
@@ -1330,19 +1382,100 @@
     });
   }
 
+  /* ---------- Validaciones estructurales del archivo ----------
+
+     Rechazan el archivo entero antes de mirar fila por fila. Se
+     devuelven como un 'rechazo' con su código, no como incidencias de
+     fila: no hay filas que listar cuando lo que falla es el archivo. */
+
+  function rechazoEstructural(codigo, mensaje) {
+    return { codigo: codigo, mensaje: mensaje, severidad: severidadDe(codigo) };
+  }
+
+  function textoCelda(celda) {
+    return String(celda === undefined || celda === null ? '' : celda).trim();
+  }
+
+  function filaVacia(celdas) {
+    return !celdas.some(function (celda) { return textoCelda(celda) !== ''; });
+  }
+
+  /* La primera fila debe traer las columnas de la plantilla: las
+     mismas, con el mismo texto y en el mismo orden, ni una más */
+  function revisarEncabezado(encabezado) {
+    var leidos = (encabezado || []).map(textoCelda);
+
+    /* Excel puede dejar celdas vacías de más a la derecha */
+    while (leidos.length > COLUMNAS_ARCHIVO.length &&
+           leidos[leidos.length - 1] === '') {
+      leidos.pop();
+    }
+
+    if (leidos.length !== COLUMNAS_ARCHIVO.length) {
+      return 'La hoja tiene ' + leidos.length +
+        (leidos.length === 1 ? ' columna' : ' columnas') + ' y se esperan ' +
+        COLUMNAS_ARCHIVO.length + ': ' + COLUMNAS_ARCHIVO.join(', ');
+    }
+
+    for (var i = 0; i < COLUMNAS_ARCHIVO.length; i++) {
+      if (leidos[i] !== COLUMNAS_ARCHIVO[i]) {
+        return 'La columna ' + (i + 1) + ' es "' + leidos[i] +
+          '" y se espera "' + COLUMNAS_ARCHIVO[i] + '"';
+      }
+    }
+
+    return null;
+  }
+
   /* Convierte las filas del archivo en registros revisados y
-     clasificados. Cada fila útil acaba con exactamente una clase. */
-  function revisarArchivo(filas) {
-    /* Se descarta la fila de encabezados y las completamente vacías */
-    var cuerpo = filas.slice(1).filter(function (celdas) {
-      return celdas.some(function (celda) {
-        return String(celda === undefined ? '' : celda).trim() !== '';
-      });
+     clasificados. Cada fila útil acaba con exactamente una clase.
+     Devuelve { rechazo, revisiones }: con 'rechazo' presente, el archivo
+     no llegó a revisarse fila por fila. */
+  function revisarArchivo(filas, formulas) {
+    var hoja = filas || [];
+    var marcas = formulas || [];
+
+    /* Las filas útiles son las que traen algo, sin contar el encabezado */
+    var utiles = [];
+
+    hoja.slice(1).forEach(function (celdas, i) {
+      if (filaVacia(celdas)) { return; }
+      utiles.push({ celdas: celdas, formulas: marcas[i + 1] || [], linea: i + 2 });
     });
 
-    var revisiones = cuerpo.map(function (celdas, i) {
-      var revision = revisarFila(celdas);
-      revision.linea = i + 2;          /* número de fila en el archivo */
+    /* VAL-EST-007 primero: no tiene sentido revisar 80,000 filas para
+       después rechazarlas por ser demasiadas */
+    if (utiles.length > MAX_FILAS_UTILES) {
+      return {
+        rechazo: rechazoEstructural('VAL-EST-007',
+          'El archivo trae ' + utiles.length.toLocaleString('es-MX') +
+          ' filas útiles y el máximo es ' + MAX_FILAS_UTILES.toLocaleString('es-MX')),
+        revisiones: []
+      };
+    }
+
+    /* VAL-EST-002: la estructura de columnas */
+    var problemaEncabezado = revisarEncabezado(hoja[0]);
+
+    if (problemaEncabezado) {
+      return {
+        rechazo: rechazoEstructural('VAL-EST-002', problemaEncabezado),
+        revisiones: []
+      };
+    }
+
+    /* VAL-EST-003: sin nada que cargar */
+    if (!utiles.length) {
+      return {
+        rechazo: rechazoEstructural('VAL-EST-003',
+          'La hoja ' + HOJA_CARGA + ' no tiene ninguna fila debajo de los encabezados'),
+        revisiones: []
+      };
+    }
+
+    var revisiones = utiles.map(function (util) {
+      var revision = revisarFila(util.celdas, util.formulas);
+      revision.linea = util.linea;     /* número de fila en el archivo */
       return revision;
     });
 
@@ -1370,7 +1503,7 @@
       }
     });
 
-    return revisiones;
+    return { rechazo: null, revisiones: revisiones };
   }
 
   /* ---------- Ventana de previsualización ----------
@@ -1432,7 +1565,10 @@
     return { lista: lista, total: total };
   }
 
-  function openPreviewModal(revisiones, nombreArchivo) {
+  function openPreviewModal(resultado, nombreArchivo) {
+    var revisiones = resultado.revisiones || [];
+    var rechazo = resultado.rechazo || null;
+
     function deClase(clase) {
       return revisiones.filter(function (r) { return r.clase === clase; });
     }
@@ -1447,7 +1583,7 @@
 
     var desglose = desglosePorCodigo(conIncidencia);
 
-    var fallida = conError.length > 0;
+    var fallida = !!rechazo || conError.length > 0;
     var estado = fallida ? RES_VAL_FALLIDA : RES_VAL_VALIDADA;
 
     var body = el('div', 'preview');
@@ -1478,23 +1614,42 @@
     var aviso = el('p', 'preview__estado preview__estado--' +
       (fallida ? 'fallida' : (conAviso.length ? 'avisos' : 'limpia')));
 
-    aviso.textContent = estado + ' · ' +
-      (fallida
-        ? 'VALIDACIÓN FALLIDA — ' + conError.length +
-          (conError.length === 1 ? ' fila tiene' : ' filas tienen') +
-          ' una incidencia bloqueante. Corrige el archivo y vuelve a intentar ' +
-          'el proceso: no es posible cargar los registros mientras haya un solo error.'
-        : (conAviso.length
-            ? 'VALIDADA — Se detectaron ' + conAviso.length +
-              (conAviso.length === 1 ? ' incidencia' : ' incidencias') +
-              ', ninguna bloqueante. Puedes continuar con la carga.'
-            : 'VALIDADA — No se detectaron incidencias en el archivo. ' +
-              'Puedes continuar con la carga.'));
+    aviso.textContent = estado + ' · ' + (rechazo
+      ? 'VALIDACIÓN FALLIDA — ' + rechazo.codigo + ' · ' + rechazo.mensaje + '. ' +
+        correccionDe(rechazo.codigo)
+      : (fallida
+          ? 'VALIDACIÓN FALLIDA — ' + conError.length +
+            (conError.length === 1 ? ' fila tiene' : ' filas tienen') +
+            ' una incidencia bloqueante. Corrige el archivo y vuelve a intentar ' +
+            'el proceso: no es posible cargar los registros mientras haya un solo error.'
+          : (conAviso.length
+              ? 'VALIDADA — Se detectaron ' + conAviso.length +
+                (conAviso.length === 1 ? ' incidencia' : ' incidencias') +
+                ', ninguna bloqueante. Puedes continuar con la carga.'
+              : 'VALIDADA — No se detectaron incidencias en el archivo. ' +
+                'Puedes continuar con la carga.')));
 
     body.appendChild(aviso);
 
+    /* Un rechazo estructural no deja filas que mostrar: la ventana
+       termina en el mensaje */
+    if (rechazo) {
+      openModal({
+        title: 'Previsualización del archivo',
+        body: body,
+        wide: true,
+        buttons: [{ label: 'Cerrar', variant: 'cancel' }]
+      });
+      return;
+    }
+
+    /* ---- Estado de la tabla de incidencias ---- */
+    var filtros = { codigo: TODOS, columna: TODOS, severidad: TODOS };
+    var orden = { campo: 'linea', dir: 'asc' };
+    var pagina = 1;
+    var porPagina = 25;
+
     /* ---- Desglose por código, que filtra la tabla al pulsarlo ---- */
-    var filtroCodigo = null;
     var desgloseTabla = null;
 
     if (desglose.lista.length) {
@@ -1525,7 +1680,9 @@
         celdas.forEach(function (td) {
           td.title = 'Mostrar solo las filas de ' + fila.codigo;
           td.addEventListener('click', function () {
-            filtroCodigo = filtroCodigo === fila.codigo ? null : fila.codigo;
+            filtros.codigo = filtros.codigo === fila.codigo ? TODOS : fila.codigo;
+            if (selCodigo) { selCodigo._display(filtros.codigo); }
+            pagina = 1;
             pinta();
           });
         });
@@ -1536,16 +1693,142 @@
       body.appendChild(desgloseTabla);
     }
 
+    /* ---- Filtros combinables y paginación de las incidencias ---- */
+    var codigosPresentes = desglose.lista.map(function (x) { return x.codigo; });
+
+    var columnasPresentes = [];
+
+    conIncidencia.forEach(function (revision) {
+      revision.incidencias.forEach(function (inc) {
+        var nombre = inc.columna === null ? SIN_COLUMNA : COLUMNAS_ARCHIVO[inc.columna];
+        if (columnasPresentes.indexOf(nombre) === -1) { columnasPresentes.push(nombre); }
+      });
+    });
+
+    columnasPresentes.sort(function (a, b) {
+      return COLUMNAS_ARCHIVO.indexOf(a) - COLUMNAS_ARCHIVO.indexOf(b);
+    });
+
+    var severidadesPresentes = [];
+
+    desglose.lista.forEach(function (x) {
+      if (severidadesPresentes.indexOf(x.severidad) === -1) {
+        severidadesPresentes.push(x.severidad);
+      }
+    });
+
+    var cabecera = null;
+    var selCodigo = null;
+    var paginacion = null;
+
+    if (conIncidencia.length) {
+      cabecera = el('div', 'incidencias-head');
+
+      selCodigo = selectField('Código', 1, [TODOS].concat(codigosPresentes),
+        function () { filtros.codigo = selCodigo._value(); pagina = 1; pinta(); });
+
+      var selColumna = selectField('Columna afectada', 1,
+        [TODOS].concat(columnasPresentes),
+        function () { filtros.columna = selColumna._value(); pagina = 1; pinta(); });
+
+      var selSeveridad = selectField('Severidad', 1,
+        [TODOS].concat(severidadesPresentes),
+        function () { filtros.severidad = selSeveridad._value(); pagina = 1; pinta(); });
+
+      [selCodigo, selColumna, selSeveridad].forEach(function (campo) {
+        cabecera.appendChild(campo);
+      });
+
+      paginacion = el('div', 'pagination');
+      cabecera.appendChild(paginacion);
+
+      body.appendChild(cabecera);
+    }
+
     /* ---- Tabla de incidencias ---- */
     var tabla = el('div', 'preview-table');
 
-    ['Fila'].concat(COLUMNAS_ARCHIVO, ['Detalle']).forEach(function (titulo) {
+    /* 'Fila' ordena por número de fila del archivo y 'Detalle' por
+       código de incidencia, con las mismas flechas del catálogo */
+    var ORDENABLES = { 0: 'linea', 9: 'codigo' };
+
+    ['Fila'].concat(COLUMNAS_ARCHIVO, ['Detalle']).forEach(function (titulo, i) {
       var th = el('div', 'preview-table__th');
-      th.textContent = titulo;
+
+      var etiqueta = el('span');
+      etiqueta.textContent = titulo;
+      th.appendChild(etiqueta);
+
+      if (ORDENABLES[i]) {
+        th.classList.add('preview-table__th--sortable');
+        th.tabIndex = 0;
+        th.setAttribute('role', 'button');
+        th.insertAdjacentHTML('beforeend', SORT_SVG);
+        th.title = 'Ordenar por ' +
+          (ORDENABLES[i] === 'linea' ? 'número de fila' : 'código de incidencia');
+
+        var alternar = function () {
+          if (orden.campo === ORDENABLES[i]) {
+            orden.dir = orden.dir === 'asc' ? 'desc' : 'asc';
+          } else {
+            orden.campo = ORDENABLES[i];
+            orden.dir = 'asc';
+          }
+          pinta();
+        };
+
+        th.addEventListener('click', alternar);
+        th.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            alternar();
+          }
+        });
+
+        th._campo = ORDENABLES[i];
+      }
+
       tabla.appendChild(th);
     });
 
     body.appendChild(tabla);
+
+    /* Código con el que se ordena una fila: el primero de sus
+       incidencias, ya filtradas */
+    function codigoDe(revision) {
+      var visibles = incidenciasVisibles(revision);
+      return visibles.length ? visibles[0].codigo : '';
+    }
+
+    /* Las incidencias de la fila que pasan los filtros activos */
+    function incidenciasVisibles(revision) {
+      return revision.incidencias.filter(function (inc) {
+        if (filtros.codigo !== TODOS && inc.codigo !== filtros.codigo) { return false; }
+        if (filtros.severidad !== TODOS && inc.severidad !== filtros.severidad) { return false; }
+
+        if (filtros.columna !== TODOS) {
+          var nombre = inc.columna === null ? SIN_COLUMNA : COLUMNAS_ARCHIVO[inc.columna];
+          if (nombre !== filtros.columna) { return false; }
+        }
+
+        return true;
+      });
+    }
+
+    /* Las filas que quedan tras combinar los tres filtros, ya ordenadas */
+    function filasFiltradas() {
+      var lista = conIncidencia.filter(function (revision) {
+        return incidenciasVisibles(revision).length > 0;
+      });
+
+      var factor = orden.dir === 'asc' ? 1 : -1;
+
+      return lista.sort(function (a, b) {
+        if (orden.campo === 'linea') { return (a.linea - b.linea) * factor; }
+        return codigoDe(a).localeCompare(codigoDe(b), 'es') * factor ||
+          (a.linea - b.linea);
+      });
+    }
 
     function pinta() {
       Array.prototype.forEach.call(
@@ -1556,27 +1839,52 @@
       /* El renglón del desglose activo queda resaltado */
       desglose.lista.forEach(function (fila) {
         (fila._celdas || []).forEach(function (td) {
-          td.classList.toggle('breakdown__td--activo', filtroCodigo === fila.codigo);
+          td.classList.toggle('breakdown__td--activo', filtros.codigo === fila.codigo);
         });
       });
 
-      var listadas = conIncidencia.filter(function (revision) {
-        return !filtroCodigo || revision.incidencias.some(function (inc) {
-          return inc.codigo === filtroCodigo;
+      /* Las flechas del encabezado marcan el sentido activo */
+      Array.prototype.forEach.call(
+        tabla.querySelectorAll('.preview-table__th--sortable'),
+        function (th) {
+          th.classList.remove('preview-table__th--asc', 'preview-table__th--desc');
+          if (th._campo !== orden.campo) {
+            th.setAttribute('aria-sort', 'none');
+            return;
+          }
+          th.classList.add('preview-table__th--' + orden.dir);
+          th.setAttribute('aria-sort', orden.dir === 'asc' ? 'ascending' : 'descending');
+        }
+      );
+
+      var listadas = filasFiltradas();
+
+      var ultima = Math.max(1, Math.ceil(listadas.length / porPagina));
+      if (pagina > ultima) { pagina = ultima; }
+
+      if (paginacion) {
+        paintPagination(paginacion, pagina, ultima, function (destino) {
+          var siguiente = Math.min(Math.max(destino, 1), ultima);
+          if (siguiente === pagina) { return; }
+          pagina = siguiente;
+          pinta();
+          tabla.scrollTop = 0;
         });
-      });
+      }
 
       if (!listadas.length) {
         var vacio = el('div', 'preview-table__empty');
-        vacio.textContent = filtroCodigo
-          ? 'Ninguna fila con ese código'
+        vacio.textContent = conIncidencia.length
+          ? 'Ninguna incidencia con los filtros aplicados'
           : 'Ninguna fila con incidencia: las ' + revisiones.length +
             ' filas útiles del archivo están correctas';
         tabla.appendChild(vacio);
         return;
       }
 
-      listadas.forEach(function (revision, i) {
+      var inicio = (pagina - 1) * porPagina;
+
+      listadas.slice(inicio, inicio + porPagina).forEach(function (revision, i) {
         var esError = revision.clase === 'con_error';
 
         var base = 'preview-table__td ' + (i % 2 === 0 ? 'row--even' : 'row--odd') +
@@ -1600,9 +1908,7 @@
         var detalle = el('div', base + ' preview-table__td--detail' +
           (esError ? '' : ' preview-table__td--detail-warn'));
 
-        var mostradas = revision.incidencias.filter(function (inc) {
-          return !filtroCodigo || inc.codigo === filtroCodigo;
-        });
+        var mostradas = incidenciasVisibles(revision);
 
         detalle.textContent = mostradas.map(function (inc) {
           return inc.codigo + ' · ' + inc.mensaje;
@@ -1615,8 +1921,6 @@
         tabla.appendChild(detalle);
       });
     }
-
-    pinta();
 
     /* ---- Pie ---- */
     var buttons = [{ label: fallida ? 'Cerrar' : 'Cancelar', variant: 'cancel' }];
@@ -1631,13 +1935,48 @@
       });
     }
 
+    /* Registros por página de las incidencias, al lado izquierdo del pie */
+    var pie = null;
+    var selRegistros = null;
+
+    if (conIncidencia.length) {
+      pie = el('div', 'log-rows');
+
+      var etiqueta = el('label');
+      etiqueta.textContent = 'Incidencias por página:';
+      pie.appendChild(etiqueta);
+
+      selRegistros = el('div', 'select select--rows select--up');
+      selRegistros.setAttribute('data-options', '25|50|75|100');
+      pie.appendChild(selRegistros);
+    }
+
     openModal({
       title: 'Previsualización del archivo',
       body: body,
       wide: true,
       xwide: true,
+      aside: pie,
       buttons: buttons
     });
+
+    /* Los desplegables se construyen ya con la ventana en el documento */
+    if (cabecera) {
+      Array.prototype.forEach.call(cabecera.children, function (campo) {
+        if (campo._initSelect) { campo._initSelect(); }
+      });
+    }
+
+    if (selRegistros) {
+      buildSelect(selRegistros, CARET_ROWS_SVG, function (option) {
+        porPagina = Number(option);
+        pagina = 1;
+        pinta();
+        tabla.scrollTop = 0;
+      }, String(porPagina));
+    }
+
+    pinta();
   }
 
   /* Alta de los registros del archivo: solo entran las filas nuevas.
@@ -1926,17 +2265,22 @@
       botonGuardar.disabled = true;
       botonGuardar.textContent = 'Revisando…';
 
-      readXlsx(archivo).then(function (filas) {
-        var revisiones = revisarArchivo(filas);
-
-        if (revisiones.length === 0) {
-          botonGuardar.disabled = false;
-          botonGuardar.textContent = 'Guardar';
-          showToast('El archivo no contiene registros', 'warning');
+      readXlsx(archivo, HOJA_CARGA).then(function (libro) {
+        /* VAL-EST-001: sin la hoja no hay nada que revisar. No se
+           adivina otra hoja del archivo. */
+        if (!libro.encontrada) {
+          openPreviewModal({
+            rechazo: rechazoEstructural('VAL-EST-001',
+              'El archivo no tiene una hoja llamada ' + HOJA_CARGA +
+              (libro.hojas.length
+                ? '. Trae: ' + libro.hojas.join(', ')
+                : '')),
+            revisiones: []
+          }, archivo.name);
           return;
         }
 
-        openPreviewModal(revisiones, archivo.name);
+        openPreviewModal(revisarArchivo(libro.filas, libro.formulas), archivo.name);
       }).catch(function (error) {
         botonGuardar.disabled = false;
         botonGuardar.textContent = 'Guardar';
