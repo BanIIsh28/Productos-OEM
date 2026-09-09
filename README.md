@@ -222,7 +222,7 @@ y los dos últimos dependen del alcance:
 | `Producto` | fijo en `Unidad`, no se captura | fija en `1`, no se captura |
 | `Presentación` | obligatorio: `Inner`, `Caja máster` o `Pallet` | obligatoria: entero ≥ 1 |
 
-`Empaque` es un desplegable que arranca en `- Selecciona un nivel -` y solo
+`Empaque` es un desplegable que arranca en `- Selecciona un empaque -` y solo
 ofrece los tres niveles agrupados; `Unidad` no está entre sus opciones porque
 nunca se elige a mano. Con alcance `Producto`, los dos campos conservan su sitio
 —para que el formulario no cambie de alto— pero muestran su valor implícito

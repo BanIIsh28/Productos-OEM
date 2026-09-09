@@ -1719,7 +1719,7 @@
 
     /* Fila 3: el destino —alcance, nivel de empaque y cantidad— */
     var SIN_ALCANCE = '- Selecciona un alcance -';
-    var SIN_EMPAQUE = '- Selecciona un nivel -';
+    var SIN_EMPAQUE = '- Selecciona un empaque -';
 
     var alcance = selectField('Alcance', 2, [SIN_ALCANCE].concat(ALCANCES),
       function () {
