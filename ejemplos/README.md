@@ -1,9 +1,8 @@
 # Archivos de ejemplo para la importación
 
 Ambos traen la hoja `Carga_Equivalencias` con la estructura de la plantilla que
-descarga el módulo: `Código`,
-`Proveedor`, `Tipo`, `Código externo`, `Alcance`, `Empaque`, `Cantidad` y
-`Estatus`.
+descarga el módulo: `Código`, `Proveedor`, `Tipo`, `Código externo`, `Alcance`,
+`Empaque`, `Cantidad` y `Estatus`.
 
 ## `Importar-correctos.xlsx`
 
@@ -30,14 +29,37 @@ nombres de su lista:
 
 ## `Importar-incompletos.xlsx`
 
-Cinco registros con un problema distinto cada uno, para probar la verificación.
-Todos son incidencias bloqueantes, así que el archivo entero se rechaza
-(`RES-VAL-002 · VALIDACIÓN FALLIDA`):
+Diecinueve registros que recorren el catálogo de incidencias de la verificación:
+diecisiete filas con error y dos que, a propósito, **no** generan ninguna. Todas
+las incidencias son bloqueantes, así que el archivo entero se rechaza
+(`RES-VAL-002 · VALIDACIÓN FALLIDA`) y no se ofrece `Continuar`.
 
-| Fila | Problema |
-| --- | --- |
-| 2 | `Código` vacío |
-| 3 | `Código` 9999999, que no existe en el catálogo |
-| 4 | Proveedor que no está en la lista |
-| 5 | `Tipo` `GS1` con dígito verificador inválido (`7501234567899`), `Empaque` en `Unidad` con alcance `Presentación` y `Cantidad` decimal (`2.5`) |
-| 6 | `Tipo` `GS1` con la etiqueta completa en vez del GTIN (`(01)07501234567893`), `Alcance` ajeno (`Surtido`), `Cantidad` no numérica (`doce`) y `Estatus` desconocido (`Suspendido`) |
+Una incidencia clara por fila:
+
+| Fila | Código | Qué trae |
+| --- | --- | --- |
+| 2 | `VAL-EST-004` | `Código` vacío |
+| 3 | `VAL-MAE-001` | `Código` 9999999, que no existe en el catálogo |
+| 4 | `VAL-MAE-002` | Proveedor que no está en la lista |
+| 5 | `VAL-GS1-003` | GS1 con dígito verificador inválido |
+| 6 | `VAL-GS1-002` | GS1 de 11 dígitos, longitud inválida |
+| 7 | `VAL-GS1-004` | La etiqueta GS1-128 completa en lugar del GTIN |
+| 8 | `VAL-GS1-005` | Un SSCC de 18 dígitos en lugar del GTIN |
+| 9 | `VAL-EMP-001` | Alcance `Producto` con `Pallet` y cantidad 12 |
+| 10 | `VAL-EMP-002` | Alcance `Presentación` con `Unidad` y cantidad 0 |
+| 11 | `VAL-EST-005` | Código externo de 51 caracteres |
+| 12 | `VAL-EST-006` | La celda del código externo es una fórmula (`=A1`) |
+
+Las reglas de unicidad necesitan pares, así que van en filas consecutivas:
+
+| Filas | Código | Qué trae |
+| --- | --- | --- |
+| 13 y 14 | `VAL-UNI-001` | La misma asociación repetida tal cual |
+| 15 y 16 | `VAL-UNI-003` | El mismo GTIN con destinos distintos, entre proveedores distintos |
+| 17 y 18 | `VAL-UNI-004` | El mismo código propietario del mismo proveedor con destinos distintos |
+
+Las **filas 19 y 20** cierran el archivo con el caso CF-51775-29: dos registros
+`No GS1` con el mismo código propietario, **proveedores distintos** y destinos
+distintos. No son incidencia de ningún tipo, así que se cuentan como `Nuevas` y
+no aparecen en la tabla —justo lo que hace la previsualización con las filas sin
+incidencia—.
