@@ -49,7 +49,10 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
   `#0071B3` en cuanto lo hay. Los tres filtros se combinan entre sí y con los
   buscadores de columna.
 - **Selects desplegables**: se abren al hacer clic, marcan la opción seleccionada,
-  y se cierran al elegir una opción, al hacer clic fuera o con `Esc`.
+  y se cierran al elegir una opción, al hacer clic fuera o con `Esc`. Muestran
+  cinco opciones a la vez y el resto se alcanza desplazando la lista, igual que
+  las sugerencias del formulario: una lista larga —la de códigos de incidencia—
+  no debe empujar la ventana fuera de la pantalla.
 - **Botones con hover**: `Exportar`, `Importar`, `Bitácora` y
   `Agregar equivalencia +` (azul), `Descargar plantilla`
   (verde) y los botones de paginación oscurecen ligeramente su color base al
@@ -283,11 +286,14 @@ a partir de ahí el excedente se desplaza dentro de la tabla, con el encabezado
 azul fijo, y la ventana ya no crece más.
 
 Como esta ventana apila más bloques que ninguna otra, está ajustada para caber
-entera sin que la página se desplace: arranca más arriba que el resto
-—`clamp(16px, 4vh, 40px)` en lugar de `clamp(60px, 16vh, 220px)`—, el encabezado
-va en un renglón en vez de dos y la fila de filtros lleva la etiqueta al lado del
-desplegable, no encima. Con el archivo de ejemplo más cargado —19 filas, 17 con
-incidencia— cabe completa en 1280×720, 1366×768, 1440×900 y 1920×1080.
+entera sin que la página se desplace: el encabezado va en un renglón en vez de
+dos y la fila de filtros lleva la etiqueta al lado del desplegable, no encima.
+Además, **si aun así no cabe, arranca más arriba** —`clamp(16px, 4vh, 40px)` en
+lugar de `clamp(60px, 16vh, 220px)`—; una previsualización corta, como la de un
+archivo sin incidencias o la de un rechazo estructural, abre a la misma altura
+que el resto de las ventanas del módulo. Con el archivo de ejemplo más cargado
+—19 filas, 17 con incidencia— cabe completa en 1280×720, 1366×768, 1440×900 y
+1920×1080; en esta última ni siquiera necesita subirse.
 
 *Nota*: el catálogo de códigos —alias, severidad y corrección recomendada— va en
 línea en `app.js` con valores razonables, pendiente de venir de una fuente

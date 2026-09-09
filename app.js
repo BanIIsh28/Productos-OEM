@@ -1624,6 +1624,22 @@
     return { lista: lista, total: total };
   }
 
+  /* Sube la ventana solo si su contenido no cabe con el margen habitual.
+     Una previsualización corta —un archivo sin incidencias, o un rechazo
+     estructural— abre entonces a la misma altura que el resto de las
+     ventanas del módulo, y únicamente las cargadas ganan el espacio. */
+  function subirSiNoCabe(overlay) {
+    var modal = overlay.querySelector('.modal');
+    var estilo = getComputedStyle(overlay);
+
+    var disponible = overlay.clientHeight -
+      parseFloat(estilo.paddingTop) - parseFloat(estilo.paddingBottom);
+
+    if (modal.getBoundingClientRect().height > disponible) {
+      overlay.classList.add('modal-overlay--raised');
+    }
+  }
+
   function openPreviewModal(resultado, nombreArchivo) {
     var revisiones = resultado.revisiones || [];
     var rechazo = resultado.rechazo || null;
@@ -1696,13 +1712,12 @@
     /* Un rechazo estructural no deja filas que mostrar: la ventana
        termina en el mensaje */
     if (rechazo) {
-      openModal({
+      subirSiNoCabe(openModal({
         title: 'Previsualización del archivo',
         body: body,
         wide: true,
-        raised: true,
         buttons: [{ label: 'Cerrar', variant: 'cancel' }]
-      });
+      }).element);
       return;
     }
 
@@ -2014,12 +2029,11 @@
       pie.appendChild(selRegistros);
     }
 
-    openModal({
+    var ventana = openModal({
       title: 'Previsualización del archivo',
       body: body,
       wide: true,
       xwide: true,
-      raised: true,
       aside: pie,
       buttons: buttons
     });
@@ -2041,6 +2055,7 @@
     }
 
     pinta();
+    subirSiNoCabe(ventana.element);
   }
 
   /* Alta de los registros del archivo: solo entran las filas nuevas.

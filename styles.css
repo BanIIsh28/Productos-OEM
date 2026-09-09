@@ -373,6 +373,12 @@ a:hover { color: rgb(0, 50, 90); }
   top: calc(100% + 2px);
   left: 0;
   min-width: 100%;
+  /* Cinco opciones visibles; el resto se alcanza desplazando la lista,
+     igual que las sugerencias del formulario. Una lista larga —la de
+     códigos de incidencia— no debe empujar la ventana fuera de la
+     pantalla. */
+  max-height: 155px;
+  overflow-y: auto;
   background: rgb(255, 255, 255);
   border: 1px solid rgb(0, 0, 0);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
