@@ -1697,6 +1697,7 @@
         title: 'Previsualización del archivo',
         body: body,
         wide: true,
+        raised: true,
         buttons: [{ label: 'Cerrar', variant: 'cancel' }]
       });
       return;
@@ -2015,6 +2016,7 @@
       body: body,
       wide: true,
       xwide: true,
+      raised: true,
       aside: pie,
       buttons: buttons
     });

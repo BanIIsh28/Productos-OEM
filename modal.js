@@ -29,6 +29,8 @@
    *   wide    {boolean} ventana ancha, para contenido tabular
    *   xwide   {boolean} ventana extra ancha, para contenido tabular
    *                     de muchas columnas
+   *   raised  {boolean} arranca más arriba de lo habitual, para el
+   *                     contenido que de otro modo no cabría a lo alto
    *   note    {string}  leyenda que acompaña a los botones del pie,
    *                     alineada a la izquierda de estos
    *   aside   {Node}    control que ocupa el lado izquierdo del pie,
@@ -44,7 +46,8 @@
 
     var previouslyFocused = document.activeElement;
 
-    var overlay = el('div', 'modal-overlay');
+    var overlay = el('div', 'modal-overlay' +
+      (options.raised ? ' modal-overlay--raised' : ''));
 
     var modal = el('div', 'modal' +
       (options.wide ? ' modal--wide' : '') +

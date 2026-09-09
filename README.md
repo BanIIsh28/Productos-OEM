@@ -279,7 +279,9 @@ ayuda. Las filas con error van sobre fondo rojizo; las que solo traen aviso,
 
 La tabla crece con el contenido hasta ocupar el 30 % de la altura de la ventana;
 a partir de ahí el excedente se desplaza dentro de la tabla, con el encabezado
-azul fijo, y la ventana ya no crece más.
+azul fijo, y la ventana ya no crece más. Como esta ventana apila más bloques que
+ninguna otra, arranca más arriba que el resto —`clamp(16px, 4vh, 40px)` en lugar
+de `clamp(60px, 16vh, 220px)`— para aprovechar el alto disponible.
 
 *Nota*: el catálogo de códigos —alias, severidad y corrección recomendada— va en
 línea en `app.js` con valores razonables, pendiente de venir de una fuente

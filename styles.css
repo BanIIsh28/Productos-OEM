@@ -788,6 +788,14 @@ a:hover { color: rgb(0, 50, 90); }
   z-index: 300;
 }
 
+/* La previsualización del archivo apila mucha más información que el
+   resto de las ventanas —resumen, estado, desglose, filtros y tabla—,
+   así que arranca más arriba para aprovechar el alto disponible */
+.modal-overlay--raised {
+  padding-top: clamp(16px, 4vh, 40px);
+  padding-bottom: 24px;
+}
+
 .modal {
   width: min(612px, 100%);
   flex-shrink: 0;
