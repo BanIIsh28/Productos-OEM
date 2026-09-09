@@ -283,9 +283,11 @@ azul fijo, y la ventana ya no crece más.
 
 *Nota*: el catálogo de códigos —alias, severidad y corrección recomendada— va en
 línea en `app.js` con valores razonables, pendiente de venir de una fuente
-externa. Los códigos `VAL-MAE-001/002` y `VAL-UNI-001/003/004/005` son los de la
-historia; los de la familia `VAL-CAM-*` son una suposición consistente con el
-patrón y llevan su `TODO`. Queda fuera de este alcance la clave canónica
+externa. Los códigos `VAL-MAE-001/002`, `VAL-UNI-001/003/004/005`,
+`VAL-GS1-001/002/003/004/005` y `VAL-EMP-001/002` son los de la historia.
+Quedan pendientes por falta de dato en el catálogo simulado: `VAL-PRV-001/002`
+(matriz proveedor-identificador OEM/no-OEM) y `VAL-MAE-003` (nivel de empaque
+inexistente o inactivo). Queda fuera de este alcance la clave canónica
 distinta por clase de RD-MOD-02.
 
 #### Qué se revisa en cada fila

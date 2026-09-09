@@ -1013,10 +1013,12 @@
 
      TODO: el catálogo real de errores —con alias, severidad y
      corrección recomendada— vendrá de una fuente externa. Aquí va en
-     línea y con valores razonables. Los códigos VAL-MAE-001/002 y
-     VAL-UNI-001/003/004/005 son los de la historia; los de la familia
-     VAL-CAM-* son una suposición consistente con el patrón, no una cita
-     textual, y habrá que confirmarlos. */
+     línea y con valores razonables. Los códigos VAL-MAE-001/002,
+     VAL-UNI-001/003/004/005, VAL-GS1-001/002/003/004/005 y
+     VAL-EMP-001/002 son los de la historia. Pendientes de implementar
+     por falta de dato en el catálogo simulado: VAL-PRV-001/002 (matriz
+     proveedor-identificador OEM/no-OEM) y VAL-MAE-003 (nivel de empaque
+     inexistente o inactivo). */
 
   var INCIDENCIAS = {
     'VAL-MAE-001': {
