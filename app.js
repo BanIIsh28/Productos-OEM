@@ -971,6 +971,95 @@
 
   var ESTATUS = ['Activo', 'Inactivo'];
 
+  /* ---------- Catálogo de incidencias (ERB-51775) ----------
+
+     Cada incidencia lleva un código, un alias corto para el desglose y
+     una severidad: 'ERROR' bloquea el archivo completo, 'INFORMACION'
+     solo informa y deja continuar.
+
+     TODO: el catálogo real de errores —con alias, severidad y
+     corrección recomendada— vendrá de una fuente externa. Aquí va en
+     línea y con valores razonables. Los códigos VAL-MAE-001/002 y
+     VAL-UNI-001/003/004/005 son los de la historia; los de la familia
+     VAL-CAM-* son una suposición consistente con el patrón, no una cita
+     textual, y habrá que confirmarlos. */
+
+  var INCIDENCIAS = {
+    'VAL-MAE-001': {
+      alias: 'El código no existe o está inactivo',
+      severidad: 'ERROR',
+      correccion: 'Verifica el código contra el catálogo de productos.'
+    },
+    'VAL-MAE-002': {
+      alias: 'El proveedor no está registrado',
+      severidad: 'ERROR',
+      correccion: 'Da de alta al proveedor o corrige su nombre.'
+    },
+    'VAL-UNI-001': {
+      alias: 'Duplicado exacto dentro del archivo',
+      severidad: 'ERROR',
+      correccion: 'Deja una sola fila con esa combinación y vuelve a cargar el archivo.'
+    },
+    'VAL-UNI-003': {
+      alias: 'GTIN con destino incompatible',
+      severidad: 'ERROR',
+      correccion: 'Un mismo GTIN no puede apuntar a dos destinos distintos, ' +
+        'sea cual sea el proveedor. Unifica el destino.'
+    },
+    'VAL-UNI-004': {
+      alias: 'Código propietario con destino incompatible',
+      severidad: 'ERROR',
+      correccion: 'Un mismo código propietario del mismo proveedor no puede ' +
+        'apuntar a dos destinos distintos. Unifica el destino.'
+    },
+    'VAL-UNI-005': {
+      alias: 'Asociación inactiva en el catálogo',
+      severidad: 'INFORMACION',
+      correccion: 'La reactivación se hace desde la pantalla de baja y ' +
+        'reactivación, no desde la carga masiva.'
+    },
+    /* TODO: códigos supuestos, pendientes de confirmar con la historia */
+    'VAL-CAM-001': {
+      alias: 'Campo obligatorio vacío',
+      severidad: 'ERROR',
+      correccion: 'Captura el dato que falta.'
+    },
+    'VAL-CAM-002': {
+      alias: 'Valor no admitido para el campo',
+      severidad: 'ERROR',
+      correccion: 'Usa uno de los valores que admite la columna.'
+    },
+    'VAL-CAM-003': {
+      alias: 'Código externo inválido para su tipo',
+      severidad: 'ERROR',
+      correccion: 'Corrige el código según la norma del tipo declarado.'
+    },
+    'VAL-CAM-004': {
+      alias: 'Destino incompatible con el alcance',
+      severidad: 'ERROR',
+      correccion: 'Ajusta el nivel de empaque y la cantidad al alcance de la fila.'
+    }
+  };
+
+  function severidadDe(codigo) {
+    return INCIDENCIAS[codigo] ? INCIDENCIAS[codigo].severidad : 'ERROR';
+  }
+
+  function aliasDe(codigo, mensaje) {
+    return INCIDENCIAS[codigo] ? INCIDENCIAS[codigo].alias : mensaje;
+  }
+
+  function correccionDe(codigo) {
+    return INCIDENCIAS[codigo] ? INCIDENCIAS[codigo].correccion : '';
+  }
+
+  /* Códigos de resultado de fila y de validación del archivo */
+  var RES_FIL_SIN_CAMBIO = 'RES-FIL-001';
+  var RES_FIL_NUEVA = 'RES-FIL-002';
+  var RES_FIL_CON_AVISO = 'RES-FIL-003';
+  var RES_VAL_VALIDADA = 'RES-VAL-001';
+  var RES_VAL_FALLIDA = 'RES-VAL-002';
+
   function existeProducto(codigo) {
     return CATALOGO.some(function (p) { return p.codigo === codigo; });
   }
@@ -979,39 +1068,53 @@
     return PROVEEDORES.some(function (p) { return normalize(p) === normalize(nombre); });
   }
 
-  /* Revisa una fila del archivo y devuelve sus errores por columna */
+  /* Revisa una fila del archivo por sí sola —formato, catálogos y la
+     regla de destino— y devuelve sus incidencias. 'errores' las indexa
+     por columna, para poder recuadrar la celda que falla; 'incidencias'
+     las lista en orden, que es lo que consumen el desglose por código y
+     la tabla de la previsualización. */
   function revisarFila(celdas) {
     var valores = COLUMNAS_ARCHIVO.map(function (_, i) {
       return String(celdas[i] === undefined || celdas[i] === null ? '' : celdas[i]).trim();
     });
 
     var errores = {};
+    var incidencias = [];
 
-    function fallo(indice, mensaje) {
-      if (!errores[indice]) { errores[indice] = mensaje; }
+    function fallo(indice, codigo, mensaje) {
+      /* Una columna muestra el primer fallo que la afecta; la lista de
+         incidencias sí recoge todos */
+      if (!errores[indice]) { errores[indice] = { codigo: codigo, mensaje: mensaje }; }
+
+      incidencias.push({
+        codigo: codigo,
+        mensaje: mensaje,
+        severidad: severidadDe(codigo),
+        columna: indice
+      });
     }
 
     /* Código de producto */
     if (!valores[0]) {
-      fallo(0, 'El código está vacío');
+      fallo(0, 'VAL-CAM-001', 'El código está vacío');
     } else if (!/^\d+$/.test(valores[0])) {
-      fallo(0, 'El código debe ser numérico');
+      fallo(0, 'VAL-CAM-002', 'El código debe ser numérico');
     } else if (!existeProducto(valores[0])) {
-      fallo(0, 'El código no existe en el catálogo');
+      fallo(0, 'VAL-MAE-001', 'El código no existe o está inactivo en el catálogo');
     }
 
     /* Proveedor */
     if (!valores[1]) {
-      fallo(1, 'El proveedor está vacío');
+      fallo(1, 'VAL-CAM-001', 'El proveedor está vacío');
     } else if (!existeProveedor(valores[1])) {
-      fallo(1, 'El proveedor no está registrado');
+      fallo(1, 'VAL-MAE-002', 'El proveedor no está registrado');
     }
 
     /* Tipo */
     if (!valores[2]) {
-      fallo(2, 'El tipo está vacío');
+      fallo(2, 'VAL-CAM-001', 'El tipo está vacío');
     } else if (TIPOS.indexOf(valores[2]) === -1) {
-      fallo(2, 'El tipo debe ser GS1 o No GS1');
+      fallo(2, 'VAL-CAM-002', 'El tipo debe ser GS1 o No GS1');
     }
 
     /* Código externo: se valida con la norma del tipo declarado en el
@@ -1020,7 +1123,7 @@
     var revisionCodigo = validarCodigoExterno(valores[2], valores[3]);
 
     if (!revisionCodigo.valido) {
-      fallo(3, revisionCodigo.mensaje);
+      fallo(3, 'VAL-CAM-003', revisionCodigo.mensaje);
     } else {
       /* Un GS1 correcto se guarda en su forma canónica; un código
          propietario, tal cual */
@@ -1029,9 +1132,9 @@
 
     /* Alcance */
     if (!valores[4]) {
-      fallo(4, 'El alcance está vacío');
+      fallo(4, 'VAL-CAM-001', 'El alcance está vacío');
     } else if (ALCANCES.indexOf(valores[4]) === -1) {
-      fallo(4, 'El alcance debe ser Producto o Presentación');
+      fallo(4, 'VAL-CAM-002', 'El alcance debe ser Producto o Presentación');
     }
 
     /* Nivel de empaque y cantidad: el destino depende del alcance.
@@ -1044,37 +1147,191 @@
       if (!valores[6]) { valores[6] = CANTIDAD_UNIDAD; }
 
       if (valores[5] !== NIVEL_UNIDAD) {
-        fallo(5, 'Con alcance Producto el empaque debe ser ' + NIVEL_UNIDAD);
+        fallo(5, 'VAL-CAM-004', 'Con alcance Producto el empaque debe ser ' + NIVEL_UNIDAD);
       }
       if (valores[6] !== CANTIDAD_UNIDAD) {
-        fallo(6, 'Con alcance Producto la cantidad debe ser ' + CANTIDAD_UNIDAD);
+        fallo(6, 'VAL-CAM-004', 'Con alcance Producto la cantidad debe ser ' + CANTIDAD_UNIDAD);
       }
     } else if (valores[4] === 'Presentación') {
       if (!valores[5]) {
-        fallo(5, 'El empaque está vacío');
+        fallo(5, 'VAL-CAM-001', 'El empaque está vacío');
       } else if (!nivelValido(valores[5])) {
-        fallo(5, 'Con alcance Presentación el empaque debe ser ' +
+        fallo(5, 'VAL-CAM-004', 'Con alcance Presentación el empaque debe ser ' +
           NIVELES_EMPAQUE.join(', '));
       }
 
       if (!valores[6]) {
-        fallo(6, 'La cantidad está vacía');
+        fallo(6, 'VAL-CAM-001', 'La cantidad está vacía');
       } else if (!cantidadValida(valores[6])) {
-        fallo(6, 'La cantidad debe ser un número entero mayor o igual a 1');
+        fallo(6, 'VAL-CAM-002', 'La cantidad debe ser un número entero mayor o igual a 1');
       }
     }
 
     /* Estatus */
     if (!valores[7]) {
-      fallo(7, 'El estatus está vacío');
+      fallo(7, 'VAL-CAM-001', 'El estatus está vacío');
     } else if (ESTATUS.indexOf(valores[7]) === -1) {
-      fallo(7, 'El estatus debe ser Activo o Inactivo');
+      fallo(7, 'VAL-CAM-002', 'El estatus debe ser Activo o Inactivo');
     }
 
-    return { valores: valores, errores: errores };
+    return { valores: valores, errores: errores, incidencias: incidencias };
   }
 
-  /* Convierte las filas del archivo en registros revisados */
+  /* ---------- Identidad de una asociación ----------
+
+     La comparación que usan tanto la clasificación de filas como las
+     reglas de unicidad: proveedor + tipo + código externo normalizado +
+     destino.
+
+     NOTA DE ALCANCE: es la comparación simple. La clave canónica
+     distinta por clase de RD-MOD-02, que agrupa varias filas GS1 en una
+     sola equivalencia, es una pieza aparte y todavía no está aquí. */
+
+  function destinoDe(alcance, empaque, cantidad) {
+    return [alcance, empaque, cantidad].join('|');
+  }
+
+  function claveAsociacion(proveedor, tipo, codigoExterno, alcance, empaque, cantidad) {
+    return [normalize(proveedor), tipo, codigoCanonico(tipo, codigoExterno),
+      destinoDe(alcance, empaque, cantidad)].join('#');
+  }
+
+  function claveDeValores(v) {
+    return claveAsociacion(v[1], v[2], v[3], v[4], v[5], v[6]);
+  }
+
+  function claveDeRegistro(row) {
+    return claveAsociacion(row[1], row[COL_TIPO], row[3],
+      row[COL_ALCANCE], row[5], row[6]);
+  }
+
+  /**
+   * Clasifica una fila que ya pasó su revisión individual.
+   * @returns {{ clase: string, resultado: string, codigo?: string, mensaje?: string }}
+   *   'nueva'      RES-FIL-002: no existe en el catálogo. Sin incidencia.
+   *   'sin_cambio' RES-FIL-001: la asociación exacta existe y está activa.
+   *                Sin incidencia.
+   *   'con_aviso'  RES-FIL-003: existe pero está inactiva. Incidencia
+   *                informativa VAL-UNI-005, que no bloquea el archivo.
+   */
+  function clasificarFila(valores) {
+    var clave = claveDeValores(valores);
+
+    var existente = null;
+
+    for (var i = 0; i < dataRows.length; i++) {
+      if (claveDeRegistro(dataRows[i]) === clave) { existente = dataRows[i]; break; }
+    }
+
+    if (!existente) {
+      return { clase: 'nueva', resultado: RES_FIL_NUEVA };
+    }
+
+    if (existente[COL_ESTATUS]) {
+      return { clase: 'sin_cambio', resultado: RES_FIL_SIN_CAMBIO };
+    }
+
+    return {
+      clase: 'con_aviso',
+      resultado: RES_FIL_CON_AVISO,
+      codigo: 'VAL-UNI-005',
+      mensaje: 'La asociación ya existe en el catálogo y está inactiva'
+    };
+  }
+
+  /* ---------- Reglas de unicidad dentro del archivo ----------
+
+     Necesitan ver el archivo completo, no una fila por vez. Solo se
+     aplican a las filas que pasaron su revisión individual: una fila con
+     el tipo o el destino mal ya está rechazada, y compararla contra las
+     demás daría incidencias sin sentido. */
+
+  function agregarIncidencia(revision, codigo, mensaje, columna) {
+    revision.incidencias.push({
+      codigo: codigo,
+      mensaje: mensaje,
+      severidad: severidadDe(codigo),
+      columna: columna === undefined ? null : columna
+    });
+  }
+
+  /* Agrupa las revisiones por la clave que devuelve 'clave' y entrega
+     los grupos con más de un integrante */
+  function gruposRepetidos(revisiones, clave) {
+    var grupos = {};
+
+    revisiones.forEach(function (revision) {
+      var k = clave(revision);
+      if (k === null) { return; }
+      if (!grupos[k]) { grupos[k] = []; }
+      grupos[k].push(revision);
+    });
+
+    return Object.keys(grupos)
+      .map(function (k) { return grupos[k]; })
+      .filter(function (grupo) { return grupo.length > 1; });
+  }
+
+  function revisarUnicidad(revisiones) {
+    var limpias = revisiones.filter(function (r) {
+      return Object.keys(r.errores).length === 0;
+    });
+
+    /* VAL-UNI-001: la misma asociación repetida tal cual en el archivo */
+    gruposRepetidos(limpias, function (r) { return claveDeValores(r.valores); })
+      .forEach(function (grupo) {
+        var lineas = grupo.map(function (r) { return r.linea; });
+
+        grupo.forEach(function (revision) {
+          agregarIncidencia(revision, 'VAL-UNI-001',
+            'Fila duplicada dentro del archivo: coincide con la fila ' +
+            lineas.filter(function (n) { return n !== revision.linea; }).join(', '));
+        });
+      });
+
+    /* VAL-UNI-003: un mismo GTIN apuntando a destinos distintos. Se
+       compara contra todo el archivo, sin importar el proveedor. */
+    var gs1 = limpias.filter(function (r) { return r.valores[2] === 'GS1'; });
+
+    gruposRepetidos(gs1, function (r) {
+      return codigoCanonico('GS1', r.valores[3]);
+    }).forEach(function (grupo) {
+      marcarDestinosIncompatibles(grupo, 'VAL-UNI-003',
+        'El GTIN aparece en el archivo con destinos distintos');
+    });
+
+    /* VAL-UNI-004: un mismo código propietario del mismo proveedor
+       apuntando a destinos distintos. Con proveedores distintos no hay
+       incidencia de ningún tipo, aunque el texto del código coincida y
+       los destinos difieran (CF-51775-29). */
+    var propios = limpias.filter(function (r) { return r.valores[2] === 'No GS1'; });
+
+    gruposRepetidos(propios, function (r) {
+      return normalize(r.valores[1]) + '#' + r.valores[3];
+    }).forEach(function (grupo) {
+      marcarDestinosIncompatibles(grupo, 'VAL-UNI-004',
+        'El código propietario aparece en el archivo con destinos distintos ' +
+        'para el mismo proveedor');
+    });
+  }
+
+  /* Marca el grupo solo si sus integrantes no comparten el mismo destino */
+  function marcarDestinosIncompatibles(grupo, codigo, mensaje) {
+    var destinos = {};
+
+    grupo.forEach(function (r) {
+      destinos[destinoDe(r.valores[4], r.valores[5], r.valores[6])] = true;
+    });
+
+    if (Object.keys(destinos).length < 2) { return; }
+
+    grupo.forEach(function (revision) {
+      agregarIncidencia(revision, codigo, mensaje, 3);
+    });
+  }
+
+  /* Convierte las filas del archivo en registros revisados y
+     clasificados. Cada fila útil acaba con exactamente una clase. */
   function revisarArchivo(filas) {
     /* Se descarta la fila de encabezados y las completamente vacías */
     var cuerpo = filas.slice(1).filter(function (celdas) {
@@ -1083,33 +1340,133 @@
       });
     });
 
-    return cuerpo.map(function (celdas, i) {
+    var revisiones = cuerpo.map(function (celdas, i) {
       var revision = revisarFila(celdas);
       revision.linea = i + 2;          /* número de fila en el archivo */
       return revision;
     });
-  }
 
-  /* ---------- Ventana de previsualización ---------- */
+    revisarUnicidad(revisiones);
 
-  function openPreviewModal(revisiones, nombreArchivo) {
-    var conErrores = revisiones.filter(function (r) {
-      return Object.keys(r.errores).length > 0;
+    /* La clase se asigna al final: una fila con cualquier incidencia
+       bloqueante es 'con_error'; el resto se compara contra el catálogo */
+    revisiones.forEach(function (revision) {
+      var bloqueada = revision.incidencias.some(function (inc) {
+        return inc.severidad === 'ERROR';
+      });
+
+      if (bloqueada) {
+        revision.clase = 'con_error';
+        return;
+      }
+
+      var clasificacion = clasificarFila(revision.valores);
+
+      revision.clase = clasificacion.clase;
+      revision.resultado = clasificacion.resultado;
+
+      if (clasificacion.codigo) {
+        agregarIncidencia(revision, clasificacion.codigo, clasificacion.mensaje);
+      }
     });
 
-    var correctos = revisiones.length - conErrores.length;
+    return revisiones;
+  }
+
+  /* ---------- Ventana de previsualización ----------
+
+     Solo se listan las filas con incidencia —con aviso o con error—.
+     Las que no la tienen —nuevas y sin cambio— únicamente se cuentan en
+     el encabezado, para que la tabla no obligue a buscar el problema
+     entre cientos de filas correctas. */
+
+  var CLASES_PREVIA = [
+    { clase: 'nueva', etiqueta: 'Nuevas' },
+    { clase: 'sin_cambio', etiqueta: 'Sin cambio' },
+    { clase: 'con_aviso', etiqueta: 'Con aviso' },
+    { clase: 'con_error', etiqueta: 'Con error' }
+  ];
+
+  /* Un renglón por código distinto, con las filas que afecta.
+     Se ordena por número de filas descendente; a igualdad, ERROR antes
+     que INFORMACION, y luego por código alfabéticamente. */
+  function desglosePorCodigo(revisiones) {
+    var porCodigo = {};
+
+    revisiones.forEach(function (revision) {
+      var vistos = {};
+
+      revision.incidencias.forEach(function (inc) {
+        /* Una fila cuenta una sola vez por código, aunque el mismo
+           código la afecte en dos columnas */
+        if (vistos[inc.codigo]) { return; }
+        vistos[inc.codigo] = true;
+
+        if (!porCodigo[inc.codigo]) {
+          porCodigo[inc.codigo] = {
+            codigo: inc.codigo,
+            alias: aliasDe(inc.codigo, inc.mensaje),
+            severidad: inc.severidad,
+            filas: 0
+          };
+        }
+
+        porCodigo[inc.codigo].filas++;
+      });
+    });
+
+    var lista = Object.keys(porCodigo).map(function (k) { return porCodigo[k]; });
+
+    var total = lista.reduce(function (suma, x) { return suma + x.filas; }, 0);
+
+    lista.forEach(function (x) {
+      x.porcentaje = total === 0 ? 0 : Math.round((x.filas / total) * 1000) / 10;
+    });
+
+    lista.sort(function (a, b) {
+      if (a.filas !== b.filas) { return b.filas - a.filas; }
+      if (a.severidad !== b.severidad) { return a.severidad === 'ERROR' ? -1 : 1; }
+      return a.codigo.localeCompare(b.codigo);
+    });
+
+    return { lista: lista, total: total };
+  }
+
+  function openPreviewModal(revisiones, nombreArchivo) {
+    function deClase(clase) {
+      return revisiones.filter(function (r) { return r.clase === clase; });
+    }
+
+    var conError = deClase('con_error');
+    var conAviso = deClase('con_aviso');
+
+    /* Solo estas se listan; las demás se cuentan y nada más */
+    var conIncidencia = revisiones.filter(function (r) {
+      return r.clase === 'con_error' || r.clase === 'con_aviso';
+    });
+
+    var desglose = desglosePorCodigo(conIncidencia);
+
+    var fallida = conError.length > 0;
+    var estado = fallida ? RES_VAL_FALLIDA : RES_VAL_VALIDADA;
 
     var body = el('div', 'preview');
 
-    /* Resumen del archivo, presentado como los campos del formulario de
-       alta: mismos títulos y cajas, todos de solo lectura */
+    /* ---- Encabezado: archivo, fecha, usuario y los contadores ---- */
     var resumen = el('div', 'preview__summary form-grid');
 
-    [['Archivo', nombreArchivo, 3],
-     ['Registros', String(revisiones.length), 1],
-     ['Correctos', String(correctos), 1],
-     ['Con errores', String(conErrores.length), 1]
-    ].forEach(function (dato) {
+    var datos = [
+      ['Archivo', nombreArchivo, 2],
+      ['Fecha', fechaTexto(new Date()), 2],
+      ['Usuario', USUARIO_SESION, 2],
+      ['Filas útiles', String(revisiones.length), 2]
+    ];
+
+    CLASES_PREVIA.forEach(function (c) {
+      datos.push([c.etiqueta, String(deClase(c.clase).length), 1]);
+    });
+
+    datos.forEach(function (dato) {
       var campo = textField(dato[0], dato[2], { value: dato[1], readOnly: true });
       campo._input.title = dato[1];
       resumen.appendChild(campo);
@@ -1117,7 +1474,69 @@
 
     body.appendChild(resumen);
 
-    /* Tabla con los registros del archivo */
+    /* ---- Estado de la validación, con su mensaje ---- */
+    var aviso = el('p', 'preview__estado preview__estado--' +
+      (fallida ? 'fallida' : (conAviso.length ? 'avisos' : 'limpia')));
+
+    aviso.textContent = estado + ' · ' +
+      (fallida
+        ? 'VALIDACIÓN FALLIDA — ' + conError.length +
+          (conError.length === 1 ? ' fila tiene' : ' filas tienen') +
+          ' una incidencia bloqueante. Corrige el archivo y vuelve a intentar ' +
+          'el proceso: no es posible cargar los registros mientras haya un solo error.'
+        : (conAviso.length
+            ? 'VALIDADA — Se detectaron ' + conAviso.length +
+              (conAviso.length === 1 ? ' incidencia' : ' incidencias') +
+              ', ninguna bloqueante. Puedes continuar con la carga.'
+            : 'VALIDADA — No se detectaron incidencias en el archivo. ' +
+              'Puedes continuar con la carga.'));
+
+    body.appendChild(aviso);
+
+    /* ---- Desglose por código, que filtra la tabla al pulsarlo ---- */
+    var filtroCodigo = null;
+    var desgloseTabla = null;
+
+    if (desglose.lista.length) {
+      desgloseTabla = el('div', 'breakdown');
+
+      ['Código', 'Alias', 'Severidad', 'Filas', '%'].forEach(function (titulo) {
+        var th = el('div', 'breakdown__th');
+        th.textContent = titulo;
+        desgloseTabla.appendChild(th);
+      });
+
+      desglose.lista.forEach(function (fila) {
+        var celdas = [];
+
+        [fila.codigo, fila.alias, fila.severidad, String(fila.filas),
+         fila.porcentaje.toFixed(1) + ' %'
+        ].forEach(function (valor, i) {
+          var td = el('div', 'breakdown__td breakdown__td--' +
+            (fila.severidad === 'ERROR' ? 'error' : 'info') +
+            (i === 1 ? ' breakdown__td--alias' : ''));
+          td.textContent = valor;
+          desgloseTabla.appendChild(td);
+          celdas.push(td);
+        });
+
+        /* Pulsar el renglón deja en la tabla solo las filas de ese
+           código; volver a pulsarlo retira el filtro */
+        celdas.forEach(function (td) {
+          td.title = 'Mostrar solo las filas de ' + fila.codigo;
+          td.addEventListener('click', function () {
+            filtroCodigo = filtroCodigo === fila.codigo ? null : fila.codigo;
+            pinta();
+          });
+        });
+
+        fila._celdas = celdas;
+      });
+
+      body.appendChild(desgloseTabla);
+    }
+
+    /* ---- Tabla de incidencias ---- */
     var tabla = el('div', 'preview-table');
 
     ['Fila'].concat(COLUMNAS_ARCHIVO, ['Detalle']).forEach(function (titulo) {
@@ -1126,47 +1545,85 @@
       tabla.appendChild(th);
     });
 
-    revisiones.forEach(function (revision, i) {
-      var malo = Object.keys(revision.errores).length > 0;
-      var base = 'preview-table__td ' + (i % 2 === 0 ? 'row--even' : 'row--odd') +
-        (malo ? ' preview-table__td--bad' : '');
-
-      var linea = el('div', base);
-      linea.textContent = revision.linea;
-      tabla.appendChild(linea);
-
-      revision.valores.forEach(function (valor, indice) {
-        var td = el('div', base + (revision.errores[indice] ? ' preview-table__td--cell' : ''));
-        td.textContent = valor === '' ? '—' : valor;
-        if (revision.errores[indice]) { td.title = revision.errores[indice]; }
-        tabla.appendChild(td);
-      });
-
-      var detalle = el('div', base + ' preview-table__td--detail');
-
-      if (malo) {
-        detalle.textContent = Object.keys(revision.errores)
-          .sort(function (a, b) { return a - b; })
-          .map(function (indice) { return revision.errores[indice]; })
-          .join('. ');
-      } else {
-        detalle.textContent = 'Correcto';
-        detalle.classList.add('preview-table__td--ok');
-      }
-
-      tabla.appendChild(detalle);
-    });
-
     body.appendChild(tabla);
 
-    /* Con un solo dato incorrecto no hay carga posible: en su lugar, la
-       leyenda acompaña al botón de cierre en el pie de la ventana */
-    var buttons = [{
-      label: conErrores.length ? 'Cerrar' : 'Cancelar',
-      variant: 'cancel'
-    }];
+    function pinta() {
+      Array.prototype.forEach.call(
+        tabla.querySelectorAll('.preview-table__td, .preview-table__empty'),
+        function (node) { tabla.removeChild(node); }
+      );
 
-    if (!conErrores.length) {
+      /* El renglón del desglose activo queda resaltado */
+      desglose.lista.forEach(function (fila) {
+        (fila._celdas || []).forEach(function (td) {
+          td.classList.toggle('breakdown__td--activo', filtroCodigo === fila.codigo);
+        });
+      });
+
+      var listadas = conIncidencia.filter(function (revision) {
+        return !filtroCodigo || revision.incidencias.some(function (inc) {
+          return inc.codigo === filtroCodigo;
+        });
+      });
+
+      if (!listadas.length) {
+        var vacio = el('div', 'preview-table__empty');
+        vacio.textContent = filtroCodigo
+          ? 'Ninguna fila con ese código'
+          : 'Ninguna fila con incidencia: las ' + revisiones.length +
+            ' filas útiles del archivo están correctas';
+        tabla.appendChild(vacio);
+        return;
+      }
+
+      listadas.forEach(function (revision, i) {
+        var esError = revision.clase === 'con_error';
+
+        var base = 'preview-table__td ' + (i % 2 === 0 ? 'row--even' : 'row--odd') +
+          (esError ? ' preview-table__td--bad' : ' preview-table__td--warn');
+
+        var linea = el('div', base);
+        linea.textContent = revision.linea;
+        tabla.appendChild(linea);
+
+        revision.valores.forEach(function (valor, indice) {
+          var falla = revision.errores[indice];
+
+          var td = el('div', base + (falla ? ' preview-table__td--cell' : ''));
+          td.textContent = valor === '' ? '—' : valor;
+          if (falla) { td.title = falla.codigo + ' · ' + falla.mensaje; }
+          tabla.appendChild(td);
+        });
+
+        /* El detalle nombra el código de cada incidencia y, en la
+           ayuda, su corrección recomendada */
+        var detalle = el('div', base + ' preview-table__td--detail' +
+          (esError ? '' : ' preview-table__td--detail-warn'));
+
+        var mostradas = revision.incidencias.filter(function (inc) {
+          return !filtroCodigo || inc.codigo === filtroCodigo;
+        });
+
+        detalle.textContent = mostradas.map(function (inc) {
+          return inc.codigo + ' · ' + inc.mensaje;
+        }).join('. ');
+
+        detalle.title = mostradas.map(function (inc) {
+          return correccionDe(inc.codigo);
+        }).filter(Boolean).join(' ');
+
+        tabla.appendChild(detalle);
+      });
+    }
+
+    pinta();
+
+    /* ---- Pie ---- */
+    var buttons = [{ label: fallida ? 'Cerrar' : 'Cancelar', variant: 'cancel' }];
+
+    /* Un archivo con avisos sigue siendo válido: lo que bloquea es el
+       error, no la incidencia */
+    if (!fallida) {
       buttons.push({
         label: 'Continuar',
         variant: 'save',
@@ -1178,24 +1635,25 @@
       title: 'Previsualización del archivo',
       body: body,
       wide: true,
-      note: conErrores.length
-        ? 'Corrige el archivo y vuelve a intentar el proceso: mientras haya un ' +
-          'solo dato incorrecto no es posible cargar los registros.'
-        : '',
+      xwide: true,
       buttons: buttons
     });
   }
 
-  /* Alta de los registros del archivo */
+  /* Alta de los registros del archivo: solo entran las filas nuevas.
+     Las que no cambian nada y las que traen aviso no tocan el catálogo
+     ni dejan entrada en la bitácora. */
   function importRows(revisiones) {
-    var nuevos = revisiones.map(function (revision) {
-      var v = revision.valores;
-      return [v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] === 'Activo'];
-    });
+    var nuevas = revisiones.filter(function (r) { return r.clase === 'nueva'; });
+    var sinCambio = revisiones.filter(function (r) { return r.clase === 'sin_cambio'; });
+    var conAviso = revisiones.filter(function (r) { return r.clase === 'con_aviso'; });
 
-    /* Se insertan al principio, en el orden del archivo; cada uno deja
+    /* Se insertan al principio, en el orden del archivo; cada una deja
        su entrada en la bitácora */
-    nuevos.slice().reverse().forEach(function (row) { commitAlta(row); });
+    nuevas.slice().reverse().forEach(function (revision) {
+      var v = revision.valores;
+      commitAlta([v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] === 'Activo']);
+    });
 
     sort.index = null;
     updateSortIndicators();
@@ -1203,8 +1661,21 @@
     renderPagination();
     renderRows();
 
-    showToast('Se cargaron ' + nuevos.length +
-      (nuevos.length === 1 ? ' equivalencia' : ' equivalencias') + ' del archivo', 'success');
+    var omitidas = [];
+    if (sinCambio.length) { omitidas.push(sinCambio.length + ' sin cambio'); }
+    if (conAviso.length) { omitidas.push(conAviso.length + ' con aviso'); }
+
+    var cola = omitidas.length ? ' (' + omitidas.join(' y ') + ')' : '';
+
+    if (!nuevas.length) {
+      showToast('El archivo se aplicó sin cambios: ninguna fila era nueva' + cola,
+        'warning');
+      return;
+    }
+
+    showToast('Se aplicó el archivo: ' + nuevas.length +
+      (nuevas.length === 1 ? ' equivalencia nueva' : ' equivalencias nuevas') + cola,
+      'success');
   }
 
   /* ---------- Ventana de la bitácora ----------

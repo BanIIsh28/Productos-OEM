@@ -29,7 +29,9 @@ nombres de su lista:
 
 ## `Importar-incompletos.xlsx`
 
-Cinco registros con un problema distinto cada uno, para probar la verificación:
+Cinco registros con un problema distinto cada uno, para probar la verificación.
+Todos son incidencias bloqueantes, así que el archivo entero se rechaza
+(`RES-VAL-002 · VALIDACIÓN FALLIDA`):
 
 | Fila | Problema |
 | --- | --- |

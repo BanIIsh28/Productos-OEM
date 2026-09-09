@@ -158,34 +158,111 @@ que se elige un archivo.
 
 Al pulsar `Guardar` se lee el archivo —`xlsx-read.js` interpreta el `.xlsx` en el
 navegador— y se revisa registro por registro. Después se abre la
-**previsualización**: una tabla ancha con todos los registros del archivo, los
-correctos y los erróneos en un mismo listado, encabezada por una fila de campos
-de solo lectura con el mismo aspecto que los del formulario de alta —`Archivo`,
-`Registros`, `Correctos` y `Con errores`—.
+**previsualización**.
 
-La tabla de la previsualización crece con el contenido hasta ocupar el 40 % de la
-altura de la ventana; a partir de ahí el excedente se desplaza dentro de la tabla,
-con el encabezado azul fijo, y la ventana ya no crece más. Así un archivo de cinco
-registros y otro de quinientos se presentan igual de bien.
+#### Clasificación de las filas (ERB-51775)
 
-Cada registro con algún problema se muestra sobre fondo rojizo, con el dato
-concreto recuadrado y el detalle del error en la última columna; los correctos
-llevan la palabra `Correcto`. Se comprueba que el código exista en el catálogo, que
-el proveedor esté registrado, que el tipo sea `GS1` o `No GS1`, que el código
-externo cumpla la norma de su tipo declarado —longitud y dígito verificador si es
-`GS1`, solo no estar vacío si es `No GS1`—, que el alcance sea `Producto` o
-`Presentación`, que el
-estatus sea `Activo` o `Inactivo`, y que el destino cumpla la regla: con
+Cada fila útil del archivo recibe **exactamente una** clase:
+
+| Clase | Código | Qué significa | ¿Incidencia? |
+| --- | --- | --- | --- |
+| Nueva | `RES-FIL-002` | Válida y no existe en el catálogo | No |
+| Sin cambio | `RES-FIL-001` | La asociación exacta ya existe y está activa | No |
+| Con aviso | `RES-FIL-003` | Ya existe pero está **inactiva** | Sí, informativa |
+| Con error | — | Incumple alguna regla | Sí, bloqueante |
+
+La identidad de una asociación se compara por **proveedor + tipo + código externo
+normalizado + destino** (alcance, empaque y cantidad). *Nota de alcance*: es la
+comparación simple; la clave canónica distinta por clase de RD-MOD-02, que agrupa
+varias filas GS1 en una sola equivalencia, es una pieza aparte que todavía no
+está aquí.
+
+Un aviso **no bloquea**: la asociación inactiva se reactiva desde la pantalla de
+baja y reactivación, no desde la carga masiva, así que el archivo sigue siendo
+válido. Un solo error, en cambio, rechaza el archivo completo.
+
+#### Reglas de unicidad dentro del archivo
+
+Se aplican viendo el archivo completo, no fila por fila, y solo sobre las filas
+que pasaron su revisión individual —una fila con el tipo o el destino mal ya está
+rechazada, y compararla contra las demás daría incidencias sin sentido—:
+
+| Código | Regla |
+| --- | --- |
+| `VAL-UNI-001` | Dos filas con proveedor, tipo, código normalizado y destino idénticos |
+| `VAL-UNI-003` | Dos filas `GS1` con el mismo GTIN y destino distinto, **sea cual sea el proveedor** |
+| `VAL-UNI-004` | Dos filas `No GS1` del **mismo proveedor** con el mismo código y destino distinto |
+
+Las tres rechazan el archivo completo. Dos filas `No GS1` con el mismo código
+pero **proveedores distintos** no generan incidencia de ningún tipo, aunque sus
+destinos difieran: es intencional (CF-51775-29).
+
+#### Los tres estados de la previsualización
+
+| Situación | Estado | Mensaje | ¿Continuar? |
+| --- | --- | --- | --- |
+| Todo nueva o sin cambio | `RES-VAL-001 · VALIDADA` | No se detectaron incidencias | Sí |
+| Hay avisos, cero errores | `RES-VAL-001 · VALIDADA` | Se detectaron N incidencias, ninguna bloqueante | Sí |
+| Al menos un error | `RES-VAL-002 · VALIDACIÓN FALLIDA` | N filas tienen una incidencia bloqueante | No |
+
+Lo que habilita `Continuar` es la ausencia de **errores**, no la ausencia de
+incidencias: un archivo con avisos se puede aplicar.
+
+#### Qué se ve
+
+El encabezado siempre muestra `Archivo`, `Fecha`, `Usuario` —un identificador
+simulado, el mismo que estampa la bitácora, porque el prototipo no tiene
+autenticación—, `Filas útiles` y el desglose en cuatro contadores: `Nuevas`,
+`Sin cambio`, `Con aviso` y `Con error`, cuya suma es siempre el total.
+
+Debajo, un **desglose por código** de incidencia con cinco columnas: código,
+alias corto, severidad (`ERROR` o `INFORMACION`), filas afectadas y porcentaje
+sobre el total de incidencias con un decimal. Se ordena por número de filas
+descendente; a igualdad, `ERROR` antes que `INFORMACION`, y luego por código
+alfabéticamente. **Pulsar un renglón deja en la tabla solo las filas de ese
+código**, y volver a pulsarlo retira el filtro. Al redondear a un decimal la suma
+de los porcentajes puede quedar en 99.9 % o 100.1 %.
+
+Por último, la tabla de incidencias: **solo lista las filas con aviso o con
+error**. Las que no tienen incidencia únicamente se cuentan en el encabezado,
+para no obligar a buscar el problema entre cientos de filas correctas; cuando no
+hay ninguna, la tabla lo dice explícitamente. Cada fila muestra el dato concreto
+recuadrado —con el código y el mensaje en su ayuda— y, en la última columna, el
+código y el mensaje de cada incidencia, con la corrección recomendada en la
+ayuda. Las filas con error van sobre fondo rojizo; las que solo traen aviso,
+ámbar.
+
+La tabla crece con el contenido hasta ocupar el 30 % de la altura de la ventana;
+a partir de ahí el excedente se desplaza dentro de la tabla, con el encabezado
+azul fijo, y la ventana ya no crece más.
+
+*Nota*: el catálogo de códigos —alias, severidad y corrección recomendada— va en
+línea en `app.js` con valores razonables, pendiente de venir de una fuente
+externa. Los códigos `VAL-MAE-001/002` y `VAL-UNI-001/003/004/005` son los de la
+historia; los de la familia `VAL-CAM-*` son una suposición consistente con el
+patrón y llevan su `TODO`. Quedan fuera de este alcance las validaciones
+estructurales `VAL-EST-001` a `VAL-EST-007` (nombre de hoja, estructura exacta de
+columnas, longitud máxima, fórmulas de Excel, límite de filas), el filtrado por
+columna y severidad, y la paginación de incidencias.
+
+#### Qué se revisa en cada fila
+
+Se comprueba que el código exista en el catálogo, que el proveedor esté
+registrado, que el tipo sea `GS1` o `No GS1`, que el código externo cumpla la
+norma de su tipo declarado —longitud y dígito verificador si es `GS1`, solo no
+estar vacío si es `No GS1`—, que el alcance sea `Producto` o `Presentación`, que
+el estatus sea `Activo` o `Inactivo`, y que el destino cumpla la regla: con
 alcance `Producto` el empaque ha de ser `Unidad` y la cantidad `1` —si el archivo
 trae esas dos celdas vacías se completan solas, y la previsualización muestra ya
 el valor completado—, y con alcance `Presentación` el empaque ha de ser `Inner`,
 `Caja máster` o `Pallet` y la cantidad un entero mayor o igual que 1.
 
-Si todo está correcto aparece el botón `Continuar`, que carga los registros al
-principio de la tabla y lo confirma con un toast. Si falla un solo dato, ese botón
-no se ofrece, el de cancelar pasa a llamarse `Cerrar` y a su izquierda, a la misma
-altura, se muestra la leyenda de que hay que corregir el archivo y repetir el
-proceso.
+`Continuar` carga al principio de la tabla **solo las filas nuevas**: las que no
+cambian nada y las que traen aviso no tocan el catálogo ni dejan entrada en la
+bitácora. El toast distingue los dos desenlaces —`Se aplicó el archivo: N
+equivalencias nuevas` o `El archivo se aplicó sin cambios: ninguna fila era
+nueva`— y entre paréntesis dice cuántas se omitieron y por qué. Si hay algún
+error, ese botón no se ofrece y el de cancelar pasa a llamarse `Cerrar`.
 
 ### Formulario de equivalencia
 
