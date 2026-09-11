@@ -1727,52 +1727,26 @@
     var pagina = 1;
     var porPagina = 25;
 
-    /* ---- Desglose por código, que filtra la tabla al pulsarlo ---- */
-    var desgloseTabla = null;
+    /* ---- Filtros combinables y paginación de las incidencias ----
 
-    if (desglose.lista.length) {
-      desgloseTabla = el('div', 'breakdown');
+       El desglose por código ya no se dibuja como tabla: su lista, con
+       el alias y el orden que le corresponde, alimenta el desplegable
+       "Tipo error", que es ahora la única vía para filtrar por código. */
 
-      ['Código', 'Alias', 'Severidad', 'Filas', '%'].forEach(function (titulo) {
-        var th = el('div', 'breakdown__th');
-        th.textContent = titulo;
-        desgloseTabla.appendChild(th);
-      });
+    /* Etiqueta visible de cada código —"VAL-GS1-003 · Dígito verificador
+       GS1 inválido"— y la vuelta, para saber qué código se eligió */
+    var etiquetaDeCodigo = {};
+    var codigoDeEtiqueta = {};
 
-      desglose.lista.forEach(function (fila) {
-        var celdas = [];
+    desglose.lista.forEach(function (x) {
+      var etiqueta = x.codigo + ' · ' + x.alias;
+      etiquetaDeCodigo[x.codigo] = etiqueta;
+      codigoDeEtiqueta[etiqueta] = x.codigo;
+    });
 
-        [fila.codigo, fila.alias, fila.severidad, String(fila.filas),
-         fila.porcentaje.toFixed(1) + ' %'
-        ].forEach(function (valor, i) {
-          var td = el('div', 'breakdown__td breakdown__td--' +
-            (fila.severidad === 'ERROR' ? 'error' : 'info') +
-            (i === 1 ? ' breakdown__td--alias' : ''));
-          td.textContent = valor;
-          desgloseTabla.appendChild(td);
-          celdas.push(td);
-        });
-
-        /* Pulsar el renglón deja en la tabla solo las filas de ese
-           código; volver a pulsarlo retira el filtro */
-        celdas.forEach(function (td) {
-          td.title = 'Mostrar solo las filas de ' + fila.codigo;
-          td.addEventListener('click', function () {
-            filtros.codigo = filtros.codigo === fila.codigo ? TODOS : fila.codigo;
-            if (selCodigo) { selCodigo._display(filtros.codigo); }
-            pagina = 1;
-            pinta();
-          });
-        });
-
-        fila._celdas = celdas;
-      });
-
-      body.appendChild(desgloseTabla);
-    }
-
-    /* ---- Filtros combinables y paginación de las incidencias ---- */
-    var codigosPresentes = desglose.lista.map(function (x) { return x.codigo; });
+    var opcionesCodigo = desglose.lista.map(function (x) {
+      return etiquetaDeCodigo[x.codigo];
+    });
 
     var columnasPresentes = [];
 
@@ -1802,8 +1776,15 @@
     if (conIncidencia.length) {
       cabecera = el('div', 'incidencias-head');
 
-      selCodigo = selectField('Código', 1, [TODOS].concat(codigosPresentes),
-        function () { filtros.codigo = selCodigo._value(); pagina = 1; pinta(); });
+      selCodigo = selectField('Tipo error', 1, [TODOS].concat(opcionesCodigo),
+        function () {
+          /* El desplegable muestra código y alias; el filtro guarda el código */
+          filtros.codigo = codigoDeEtiqueta[selCodigo._value()] || TODOS;
+          pagina = 1;
+          pinta();
+        });
+
+      selCodigo.classList.add('field--codigo');
 
       var selColumna = selectField('Columna afectada', 1,
         [TODOS].concat(columnasPresentes),
@@ -1913,13 +1894,6 @@
         tabla.querySelectorAll('.preview-table__td, .preview-table__empty'),
         function (node) { tabla.removeChild(node); }
       );
-
-      /* El renglón del desglose activo queda resaltado */
-      desglose.lista.forEach(function (fila) {
-        (fila._celdas || []).forEach(function (td) {
-          td.classList.toggle('breakdown__td--activo', filtros.codigo === fila.codigo);
-        });
-      });
 
       /* Las flechas del encabezado marcan el sentido activo */
       Array.prototype.forEach.call(

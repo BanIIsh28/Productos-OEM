@@ -257,20 +257,18 @@ porque el prototipo no tiene autenticación—, `Filas útiles` y el desglose en
 cuatro contadores: `Nuevas`, `Sin cambio`, `Con aviso` y `Con error`, cuya suma
 es siempre el total.
 
-Debajo, un **desglose por código** de incidencia con cinco columnas: código,
-alias corto, severidad (`ERROR` o `INFORMACION`), filas afectadas y porcentaje
-sobre el total de incidencias con un decimal. Se ordena por número de filas
-descendente; a igualdad, `ERROR` antes que `INFORMACION`, y luego por código
-alfabéticamente. **Pulsar un renglón deja en la tabla solo las filas de ese
-código**, y volver a pulsarlo retira el filtro. Al redondear a un decimal la suma
-de los porcentajes puede quedar en 99.9 % o 100.1 %.
+Sobre la tabla, una fila de **filtros combinables** —`Tipo error`, `Columna
+afectada` y `Severidad`, cada uno con `Todos` por omisión y armado con los
+valores que de verdad aparecen en el archivo— y la **paginación**, con el mismo
+componente que la tabla del catálogo y la bitácora. En el pie, `Incidencias por
+página` con 25, 50, 75 y 100.
 
-Sobre la tabla, una fila de **filtros combinables** —`Código`, `Columna afectada`
-y `Severidad`, cada uno con `Todos` por omisión y armado con los valores que de
-verdad aparecen en el archivo— y la **paginación**, con el mismo componente que la
-tabla del catálogo y la bitácora. El desplegable `Código` y el desglose están
-sincronizados: pulsar un renglón del desglose mueve también el filtro. En el pie,
-`Incidencias por página` con 25, 50, 75 y 100.
+`Tipo error` muestra en cada opción el código y su alias
+—`VAL-GS1-003 · Dígito verificador GS1 inválido`—, así que es más ancho que sus
+compañeros: ocupa 430 px, cede si la fila se queda estrecha y su lista se
+ensancha lo necesario para que ningún alias se corte. Las opciones van ordenadas
+por número de filas afectadas descendente; a igualdad, `ERROR` antes que
+`INFORMACION`, y luego por código alfabéticamente.
 
 Los encabezados `Fila` y `Detalle` **ordenan** la lista, con las mismas flechas de
 ascendente y descendente del catálogo: por número de fila del archivo y por código

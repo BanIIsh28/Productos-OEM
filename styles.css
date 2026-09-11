@@ -1243,69 +1243,6 @@ a:hover { color: rgb(0, 50, 90); }
   color: rgb(160, 40, 40);
 }
 
-/* Desglose por código de incidencia. Cada renglón filtra la tabla. */
-.breakdown {
-  display: grid;
-  grid-template-columns:
-    minmax(0, 120px)    /* Código */
-    minmax(0, 1fr)      /* Alias */
-    minmax(0, 120px)    /* Severidad */
-    minmax(0, 70px)     /* Filas */
-    minmax(0, 80px);    /* % */
-  max-height: 22vh;
-  overflow-y: auto;
-  margin-bottom: 10px;
-  border: 1px solid rgb(214, 214, 214);
-}
-
-.breakdown__th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: rgb(0, 75, 131);
-  box-shadow: 0 0 0 1px rgb(255, 255, 255);
-  display: flex;
-  padding: 6px 8px;
-  justify-content: center;
-  align-items: center;
-  font-size: 12px;
-  color: rgb(255, 255, 255);
-}
-
-.breakdown__td {
-  display: flex;
-  padding: 6px 8px;
-  justify-content: center;
-  align-items: center;
-  font-size: 12px;
-  text-align: center;
-  cursor: pointer;
-  overflow-wrap: break-word;
-  word-break: break-word;
-  min-width: 0;
-  background: rgb(255, 255, 255);
-  transition: background 0.12s ease;
-}
-
-/* El alias se lee mejor alineado a la izquierda */
-.breakdown__td--alias {
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.breakdown__td--error { color: rgb(160, 40, 40); }
-.breakdown__td--info { color: rgb(125, 88, 12); }
-
-.breakdown__td:hover { background: rgb(240, 244, 248); }
-
-/* Renglón cuyo filtro está aplicado */
-.breakdown__td--activo,
-.breakdown__td--activo:hover {
-  background: rgb(0, 75, 131);
-  color: rgb(255, 255, 255);
-  font-weight: 700;
-}
-
 /* Filtros y paginación de las incidencias */
 .incidencias-head {
   display: flex;
@@ -1327,6 +1264,33 @@ a:hover { color: rgb(0, 50, 90); }
 .incidencias-head .field > label { white-space: nowrap; }
 
 .incidencias-head .field .select { width: 132px; }
+
+/* "Tipo error" muestra el código y su alias, así que ocupa el espacio
+   libre de la fila y se encoge en pantallas estrechas */
+.incidencias-head .field--codigo {
+  /* Ocupa lo que necesita y cede si la fila se queda estrecha; el hueco
+     sobrante es para la paginación, que va al extremo opuesto */
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.incidencias-head .field--codigo .select {
+  width: 430px;
+  max-width: 100%;
+}
+
+/* El texto elegido puede no caber en el disparador; la lista, en
+   cambio, se ensancha lo necesario */
+.incidencias-head .field--codigo .select__trigger span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.incidencias-head .field--codigo .select__menu {
+  width: max-content;
+  max-width: min(520px, 60vw);
+}
 
 /* Encabezados que ordenan la tabla de incidencias */
 .preview-table__th--sortable {
