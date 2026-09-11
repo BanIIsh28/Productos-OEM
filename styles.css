@@ -287,6 +287,15 @@ a:hover { color: rgb(0, 50, 90); }
   background: rgb(0, 113, 179);   /* #0071B3 */
   padding: 10px 20px;
 }
+
+/* "Filtrar" y el borrador van juntos: son un par, no dos controles
+   sueltos de la fila de filtros */
+.filters__acciones {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .btn--filter:hover { background: rgb(0, 96, 152); }
 .btn--filter:active { background: rgb(0, 82, 130); }
 
@@ -308,6 +317,18 @@ a:hover { color: rgb(0, 50, 90); }
 /* Sin efecto hover: el gris es el color de los botones deshabilitados */
 .btn--disabled:hover,
 .btn:disabled:hover { background: rgb(211, 211, 211); }
+
+/* Botón de solo icono: cuadrado y con la misma altura que su pareja.
+   Va después del bloque de deshabilitado, que fija su propio relleno y
+   de otro modo lo aplastaría cuando el botón nace apagado. */
+.btn--icon,
+.btn--icon:disabled {
+  padding: 8px;
+  width: 34px;
+  height: 34px;
+}
+
+.btn--icon svg { flex-shrink: 0; }
 
 /* ---------- Filtros ---------- */
 

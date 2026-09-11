@@ -2995,6 +2995,14 @@
 
   /* ---------- Filtros superiores ---------- */
 
+  /* Hay algún filtro superior puesto: el borrador tiene algo que
+     restablecer */
+  function hasAppliedFilters() {
+    return applied.tipo !== TODOS ||
+      applied.alcance !== TODOS ||
+      applied.estatus !== TODOS;
+  }
+
   function updateFilterButton() {
     var btn = document.getElementById('btnFiltrar');
     var pendiente = hasPendingChanges();
@@ -3003,6 +3011,14 @@
     btn.title = pendiente
       ? 'Aplicar los filtros seleccionados'
       : 'Cambia algún filtro para poder aplicarlo';
+
+    var limpiar = document.getElementById('btnLimpiar');
+    var aplicados = hasAppliedFilters();
+
+    limpiar.disabled = !aplicados;
+    limpiar.title = aplicados
+      ? 'Restablecer los filtros y la tabla'
+      : 'Aplica algún filtro para poder restablecerlo';
   }
 
   function applyTopFilters() {
@@ -3018,9 +3034,32 @@
     updateFilterButton();
   }
 
+  /* Devuelve los desplegables superiores a "Todos" y refresca la tabla.
+     No toca los buscadores de las columnas: esos son otro filtro y se
+     vacían uno por uno desde su propio campo. */
+  function clearTopFilters() {
+    if (!hasAppliedFilters()) { return; }
+
+    ['selTipo', 'selAlcance', 'selEstatus'].forEach(function (id) {
+      var select = document.getElementById(id);
+      if (select._setSelected) { select._setSelected(TODOS); }
+    });
+
+    applied.tipo = pending.tipo = TODOS;
+    applied.alcance = pending.alcance = TODOS;
+    applied.estatus = pending.estatus = TODOS;
+
+    page = 1;
+    renderPagination();
+    renderRows();
+    updateFilterButton();
+  }
+
   function bindFilters() {
     document.getElementById('btnFiltrar')
       .addEventListener('click', applyTopFilters);
+    document.getElementById('btnLimpiar')
+      .addEventListener('click', clearTopFilters);
     /* Se envuelve para que el evento del clic no llegue como registro */
     document.getElementById('btnEquivalencia')
       .addEventListener('click', function () { openEquivalenceModal(); });

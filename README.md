@@ -48,6 +48,12 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
   controles sin acción— mientras no haya un cambio pendiente y toma su color
   `#0071B3` en cuanto lo hay. Los tres filtros se combinan entre sí y con los
   buscadores de columna.
+- **Restablecer los filtros**: a la derecha de `Filtrar`, un botón de solo icono
+  —un borrador— devuelve los tres desplegables a `Todos` y refresca la tabla a su
+  estado inicial. Sigue el mismo criterio visual que su pareja: está deshabilitado
+  mientras no haya **ningún filtro aplicado**, no solo elegido, y se enciende en
+  cuanto lo hay. **No toca los buscadores de columna**: esos son otro filtro y se
+  vacían desde su propio campo.
 - **Selects desplegables**: se abren al hacer clic, marcan la opción seleccionada,
   y se cierran al elegir una opción, al hacer clic fuera o con `Esc`. Muestran
   cinco opciones a la vez y el resto se alcanza desplazando la lista, igual que

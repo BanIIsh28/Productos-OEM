@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Productos OEM</title>
-<link rel="stylesheet" href="styles.css?v=46">
+<link rel="stylesheet" href="styles.css?v=47">
 </head>
 <body>
 
@@ -82,8 +82,20 @@
              data-options="Todos|Activo|Inactivo"></div>
       </div>
 
-      <button type="button" class="btn btn--filter" id="btnFiltrar" disabled
-              title="Cambia algún filtro para poder aplicarlo">Filtrar</button>
+      <div class="filters__acciones">
+        <button type="button" class="btn btn--filter" id="btnFiltrar" disabled
+                title="Cambia algún filtro para poder aplicarlo">Filtrar</button>
+
+        <button type="button" class="btn btn--filter btn--icon" id="btnLimpiar" disabled
+                aria-label="Restablecer los filtros"
+                title="Aplica algún filtro para poder restablecerlo">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="rgb(255,255,255)" aria-hidden="true">
+            <path d="M14.5 2.8 L21.2 9.5 L15.41 14.16 L8.71 7.46 Z"></path>
+            <path d="M9.84 8.59 L16.54 15.29 L11.7 19 L5 12.3 Z"></path>
+            <path d="M8.6 19.4 L21.6 19.4 L21.6 21.6 L8.6 21.6 Z"></path>
+          </svg>
+        </button>
+      </div>
 
       <div class="pagination" id="pagination"></div>
     </div>
@@ -99,10 +111,10 @@
   </main>
 </div>
 
-<script src="xlsx.js?v=46"></script>
-<script src="xlsx-read.js?v=46"></script>
-<script src="toast.js?v=46"></script>
-<script src="modal.js?v=46"></script>
-<script src="app.js?v=46"></script>
+<script src="xlsx.js?v=47"></script>
+<script src="xlsx-read.js?v=47"></script>
+<script src="toast.js?v=47"></script>
+<script src="modal.js?v=47"></script>
+<script src="app.js?v=47"></script>
 </body>
 </html>
