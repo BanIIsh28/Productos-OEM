@@ -493,9 +493,10 @@ a:hover { color: rgb(0, 50, 90); }
   /* Código, Proveedor, Código externo y Alcance comparten ancho; Tipo,
      Cantidad, Estatus y Acciones son más angostas. Empaque dejó de ser
      un número para pasar a ser el nivel de empaque, así que necesita
-     sitio para "Caja máster". */
+     sitio para "Caja máster", y U. de M. para "No disponible". */
   grid-template-columns:
     minmax(0, 1fr)                /* Código */
+    minmax(0, 0.7fr)              /* U. de M. */
     minmax(0, 1fr)                /* Proveedor */
     minmax(0, 0.55fr)             /* Tipo */
     minmax(0, 1fr)                /* Código externo */

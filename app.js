@@ -5,21 +5,31 @@
 
   /* ---------- Definición de columnas ----------
 
-     search   muestra el campo "Buscar" en el encabezado
-     minChars caracteres mínimos para que el filtro se ejecute
-     numeric  ordena por valor numérico en lugar de alfabético
-     control  la celda contiene un control, no texto                   */
+     search    muestra el campo "Buscar" en el encabezado
+     minChars  caracteres mínimos para que el filtro se ejecute
+     numeric   ordena por valor numérico en lugar de alfabético
+     control   la celda contiene un control, no texto
+     dataIndex posición del dato dentro de la fila de dataRows
+
+     'dataIndex' existe porque la posición en esta lista y la posición
+     dentro de la fila dejaron de ser la misma: "U. de M." se calcula a
+     partir del código y no vive en dataRows, así que corre la posición
+     de todo lo que va detrás. Las columnas que no leen un dato de la
+     fila —la calculada y la de acciones— lo llevan en null y son las
+     únicas dos. Nunca se usa el índice de esta lista para leer una
+     fila: siempre 'dataIndex'. */
 
   var columns = [
-    { label: 'Código', sortable: true, numeric: true, search: true },
-    { label: 'Proveedor', sortable: true, search: true },
-    { label: 'Tipo' },
-    { label: 'Código externo', numeric: true, search: true },
-    { label: 'Alcance' },
-    { label: 'Empaque' },
-    { label: 'Cantidad' },
-    { label: 'Estatus', control: 'switch' },
-    { label: 'Acciones', control: 'actions' }
+    { label: 'Código', sortable: true, numeric: true, search: true, dataIndex: 0 },
+    { label: 'U. de M.', control: 'unidad', dataIndex: null },
+    { label: 'Proveedor', sortable: true, search: true, dataIndex: 1 },
+    { label: 'Tipo', dataIndex: 2 },
+    { label: 'Código externo', numeric: true, search: true, dataIndex: 3 },
+    { label: 'Alcance', dataIndex: 4 },
+    { label: 'Empaque', dataIndex: 5 },
+    { label: 'Cantidad', dataIndex: 6 },
+    { label: 'Estatus', control: 'switch', dataIndex: 7 },
+    { label: 'Acciones', control: 'actions', dataIndex: null }
   ];
 
   var COL_SKU = 0;
@@ -27,6 +37,12 @@
   var COL_TIPO = 2;
   var COL_ALCANCE = 4;
   var COL_ESTATUS = 7;
+
+  /* La columna que lee ese índice de la fila, para consultar cómo se
+     ordena o cuántos caracteres exige su buscador */
+  function columnaDeDato(index) {
+    return columns.filter(function (col) { return col.dataIndex === index; })[0];
+  }
 
   /* ---------- Registros de ejemplo ---------- */
 
@@ -95,6 +111,27 @@
 
     return productos;
   })();
+
+  /* ---------- Unidad de medición del producto (RD-MOD-06) ----------
+
+     Dato informativo del producto, no de la equivalencia: se muestra en
+     la tabla y en el formulario, y no se captura, no se persiste, no
+     deja historial ni viaja en la plantilla ni en ninguna descarga. */
+
+  var UNIDADES = ['Metro', 'Pieza', 'Juego'];
+
+  /* Simula ProductoUnidadMedidaID: determinística por código, para que
+     el mismo producto muestre siempre la misma unidad en cualquier
+     sesión. Una parte queda sin unidad recuperable, para poder mostrar
+     el caso "No disponible" que la regla contempla. */
+  function unidadDe(codigo) {
+    var suma = String(codigo).split('').reduce(function (acc, ch) {
+      return acc + ch.charCodeAt(0);
+    }, 0);
+
+    if (suma % 11 === 0) { return 'No disponible'; }
+    return UNIDADES[suma % UNIDADES.length];
+  }
 
   var TIPOS = ['GS1', 'No GS1'];
 
@@ -516,7 +553,8 @@
   }
 
   function minCharsFor(index) {
-    return columns[index].minChars || MIN_CHARS;
+    var col = columnaDeDato(index);
+    return (col && col.minChars) || MIN_CHARS;
   }
 
   /* Normaliza para comparar sin distinguir mayúsculas ni acentos */
@@ -542,8 +580,10 @@
     var index = sort.index;
     var factor = sort.dir === 'asc' ? 1 : -1;
 
+    var col = columnaDeDato(index);
+
     return rows.sort(function (a, b) {
-      if (columns[index].numeric) {
+      if (col && col.numeric) {
         return (Number(a[index]) - Number(b[index])) * factor;
       }
       return a[index].localeCompare(b[index], 'es', { sensitivity: 'base' }) * factor;
@@ -716,7 +756,7 @@
       var rowClass = i % 2 === 0 ? 'row--even' : 'row--odd';
       if (row === resaltado) { rowClass += ' row--new'; }
 
-      columns.forEach(function (col, index) {
+      columns.forEach(function (col) {
         var td = el('div', 'td ' + rowClass);
 
         if (col.control === 'switch') {
@@ -725,7 +765,12 @@
           td.appendChild(editButton(row));
         } else {
           var span = el('span');
-          span.textContent = row[index];
+
+          /* La unidad no está en la fila: se deriva del código */
+          span.textContent = col.control === 'unidad'
+            ? unidadDe(row[COL_SKU])
+            : row[col.dataIndex];
+
           td.appendChild(span);
         }
 
@@ -776,10 +821,13 @@
 
   function updateSortIndicators() {
     var headers = document.querySelectorAll('#table .th');
-    Array.prototype.forEach.call(headers, function (th, index) {
+
+    /* Se compara contra el índice de dato que guardó el encabezado, no
+       contra su posición: ya no son el mismo número */
+    Array.prototype.forEach.call(headers, function (th) {
       th.classList.remove('th--asc', 'th--desc');
       if (!th.classList.contains('th--sortable')) { return; }
-      if (sort.index === index) {
+      if (sort.index === th._dataIndex) {
         th.classList.add(sort.dir === 'asc' ? 'th--asc' : 'th--desc');
         th.setAttribute('aria-sort', sort.dir === 'asc' ? 'ascending' : 'descending');
       } else {
@@ -791,14 +839,17 @@
   function renderTable() {
     var host = document.getElementById('table');
 
-    columns.forEach(function (col, index) {
+    columns.forEach(function (col) {
       var th = el('div', 'th');
+      th._dataIndex = col.dataIndex;
+
       var inner = el('div', 'th__inner');
       var label = el('span');
       label.textContent = col.label;
       inner.appendChild(label);
 
-      if (col.sortable) {
+      /* Una columna sin dato en la fila no se puede ordenar */
+      if (col.sortable && col.dataIndex !== null) {
         inner.insertAdjacentHTML('beforeend', SORT_SVG);
         th.classList.add('th--sortable');
         th.tabIndex = 0;
@@ -807,11 +858,11 @@
         th.title = 'Ordenar por ' + col.label +
           (col.numeric ? ' (orden numérico)' : ' (orden alfabético)');
 
-        th.addEventListener('click', function () { toggleSort(index); });
+        th.addEventListener('click', function () { toggleSort(col.dataIndex); });
         th.addEventListener('keydown', function (event) {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            toggleSort(index);
+            toggleSort(col.dataIndex);
           }
         });
       }
@@ -820,30 +871,33 @@
       host.appendChild(th);
     });
 
-    columns.forEach(function (col, index) {
+    columns.forEach(function (col) {
       var box = el('div', 'th-search');
 
-      if (col.search) {
+      /* Tampoco se puede buscar en una columna que no lee la fila */
+      if (col.search && col.dataIndex !== null) {
+        var indice = col.dataIndex;
+
         var input = el('input');
         input.type = 'text';
         input.placeholder = 'Buscar';
-        input.title = 'Escribe al menos ' + minCharsFor(index) +
-          (minCharsFor(index) === 1 ? ' carácter' : ' caracteres') +
+        input.title = 'Escribe al menos ' + minCharsFor(indice) +
+          (minCharsFor(indice) === 1 ? ' carácter' : ' caracteres') +
           ' y pulsa Enter para filtrar por ' + col.label;
         input.setAttribute('aria-label', 'Filtrar por ' + col.label);
 
         input.addEventListener('keydown', function (event) {
           if (event.key === 'Enter') {
             event.preventDefault();
-            applyFilter(input, index);
+            applyFilter(input, indice);
           }
         });
 
         /* Al vaciar el campo se retira su filtro sin necesidad de Enter */
         input.addEventListener('input', function () {
           input.classList.remove('th-search__input--invalid');
-          if (input.value.trim() === '' && filters[index] !== undefined) {
-            delete filters[index];
+          if (input.value.trim() === '' && filters[indice] !== undefined) {
+            delete filters[indice];
             page = 1;
             renderPagination();
             renderRows();
@@ -886,10 +940,11 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  /* La hoja lleva las columnas de datos y el estatus como texto;
-     "Acciones" no se exporta porque solo contiene un botón. */
+  /* La hoja lleva las columnas de datos y el estatus como texto. Quedan
+     fuera las que no leen un dato de la fila: "Acciones", que solo tiene
+     un botón, y "U. de M.", que la regla excluye de toda descarga. */
   function sheetColumns() {
-    return columns.filter(function (col) { return col.control !== 'actions'; });
+    return columns.filter(function (col) { return col.dataIndex !== null; });
   }
 
   function headerLabels() {
@@ -897,9 +952,11 @@
   }
 
   function sheetRow(row) {
-    return sheetColumns().map(function (col, index) {
-      if (col.control === 'switch') { return row[index] ? 'Activo' : 'Inactivo'; }
-      return row[index];
+    return sheetColumns().map(function (col) {
+      if (col.control === 'switch') {
+        return row[col.dataIndex] ? 'Activo' : 'Inactivo';
+      }
+      return row[col.dataIndex];
     });
   }
 
@@ -2544,13 +2601,22 @@
       onSelect: function (p) {
         sku._input.value = p.codigo;
         nombreProducto._input.value = p.nombre;
+        unidad._input.value = unidadDe(p.codigo);
         tocados.sku = true;
         revisar();
       }
     });
 
-    /* Fila 2: proveedor */
-    var proveedor = suggestField('Proveedor', 6, {
+    /* Fila 2: proveedor y la unidad de medición del producto.
+
+       La unidad es informativa (RD-MOD-06): se deriva del código, no se
+       captura, no se guarda en la equivalencia y no deja historial. Por
+       eso no entra en estado(), ni en guardar(), ni en la fila que se
+       persiste, ni en CAMPOS. */
+    var unidad = textField('U. de M.', 2, { readOnly: true });
+    if (editando) { unidad._input.value = unidadDe(registro[COL_SKU]); }
+
+    var proveedor = suggestField('Proveedor', 4, {
       placeholder: 'Nombre del proveedor',
       search: function (texto) {
         var buscado = normalize(texto);
@@ -2618,7 +2684,7 @@
       cantidad: editando && !deProducto ? registro[6] : ''
     };
 
-    var campos = [sku, nombreProducto, proveedor, tipo, codigoExterno,
+    var campos = [sku, nombreProducto, proveedor, unidad, tipo, codigoExterno,
       alcance, empaque, cantidad];
     campos.forEach(function (campo) { body.appendChild(campo); });
 

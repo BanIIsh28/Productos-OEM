@@ -22,6 +22,7 @@ componentes e iconografía).
 | Columna | Contenido |
 | --- | --- |
 | Código | código de producto, de 7 dígitos |
+| U. de M. | unidad de medición del producto: `Metro`, `Pieza`, `Juego` o `No disponible` |
 | Proveedor | nombre de distribuidor de autopartes |
 | Tipo | `GS1` o `No GS1` |
 | Código externo | GTIN canónico de 14 dígitos si el tipo es `GS1`; código propietario si es `No GS1` |
@@ -32,7 +33,8 @@ componentes e iconografía).
 | Acciones | botón ámbar de esquinas redondeadas con icono de lápiz relleno y sugerencia `Editar` |
 
 Los 182 registros de ejemplo se generan al cargar la vista, con valores aleatorios
-dentro de esos rangos, con el destino ya conforme a la regla RD-MOD-01 —los de
+dentro de esos rangos —salvo `U. de M.`, que no es un dato de la fila sino que se
+calcula del código—, con el destino ya conforme a la regla RD-MOD-01 —los de
 alcance `Producto` llevan `Unidad` y `1`, y los de `Presentación`, un nivel
 agrupado y su cantidad— y con el código externo coherente con su tipo: los `GS1`
 llevan un GTIN-14 con dígito verificador correcto y los `No GS1`, un código
@@ -342,7 +344,7 @@ El formulario es:
 | Fila | Campos |
 | --- | --- |
 | 1 | `Código` (con búsqueda) y `Nombre del producto` (solo lectura) |
-| 2 | `Proveedor` (con búsqueda) |
+| 2 | `Proveedor` (con búsqueda) y `U. de M.` (solo lectura) |
 | 3 | `Tipo` y `Código externo` |
 | 4 | `Alcance`, `Empaque` y `Cantidad` — el destino |
 
@@ -351,6 +353,30 @@ cuyo código contiene lo escrito, mostrando el código seguido del nombre. Se ve
 cinco a la vez y el resto se alcanza desplazando la lista; al elegir uno se
 llenan el código y el nombre. `Proveedor` funciona igual sobre los nombres de
 proveedores. `Alcance` arranca en `- Selecciona un alcance -`.
+
+#### La unidad de medición (RD-MOD-06)
+
+`U. de M.` es un dato **del producto**, no de la equivalencia. Se **deriva del
+código** —de forma determinística, así que el mismo producto muestra siempre la
+misma unidad en cualquier sesión— y toma uno de cuatro valores: `Metro`, `Pieza`,
+`Juego` o `No disponible`, este último cuando el producto no tiene unidad
+recuperable (unos 84 de los 900 del catálogo simulado).
+
+Aparece como columna de la tabla, junto al `Código` que la origina, y en el
+formulario de alta y edición, en solo lectura: al elegir un producto en el
+buscador de `Código` se llena sola, igual que `Nombre del producto`, y al editar
+llega precargada.
+
+**No se captura, no se persiste, no genera historial y no viaja en ninguna
+descarga**: queda fuera de la plantilla de carga, de la exportación a Excel, de la
+previsualización de importación y de las entradas de la bitácora. Solo se muestra.
+
+Por eso cada entrada de `columns` en `app.js` lleva un `dataIndex` explícito con
+la posición real del dato dentro de la fila, y `U. de M.` —como `Acciones`— lo
+lleva en `null`. Nada lee una fila usando la posición dentro de `columns`: el
+render, el orden, los buscadores y la exportación usan siempre `dataIndex`. Sin
+eso, insertar una columna calculada en medio habría corrido el índice de todas
+las que van detrás y las habría desalineado de sus datos en silencio.
 
 #### El destino (RD-MOD-01)
 
