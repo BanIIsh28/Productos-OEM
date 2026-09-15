@@ -348,7 +348,7 @@ El formulario es:
 | Fila | Campos |
 | --- | --- |
 | 1 | `Código` (con búsqueda) y `Nombre del producto` (solo lectura) |
-| 2 | `Proveedor` (con búsqueda) y `U. de M.` (solo lectura) |
+| 2 | `U. de M.` (solo lectura) y `Proveedor` (con búsqueda) |
 | 3 | `Tipo` y `Código proveedor` |
 | 4 | `Alcance`, `Empaque` y `Cantidad` — el destino |
 

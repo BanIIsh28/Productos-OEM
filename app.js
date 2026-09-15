@@ -2620,7 +2620,7 @@
       }
     });
 
-    /* Fila 2: proveedor y la unidad de medición del producto.
+    /* Fila 2: la unidad de medición del producto y el proveedor.
 
        La unidad es informativa (RD-MOD-06): se deriva del código, no se
        captura, no se guarda en la equivalencia y no deja historial. Por
@@ -2697,7 +2697,7 @@
       cantidad: editando && !deProducto ? registro[6] : ''
     };
 
-    var campos = [sku, nombreProducto, proveedor, unidad, tipo, codigoExterno,
+    var campos = [sku, nombreProducto, unidad, proveedor, tipo, codigoExterno,
       alcance, empaque, cantidad];
     campos.forEach(function (campo) { body.appendChild(campo); });
 
