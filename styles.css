@@ -334,7 +334,12 @@ a:hover { color: rgb(0, 50, 90); }
 
 .filters {
   display: flex;
-  gap: 20px;
+  /* Con cuatro filtros, los botones y la paginación, la fila puede no
+     caber en pantallas medianas: se deja reacomodar antes que
+     desbordarse, y lo único que baja de renglón es la paginación,
+     porque va al extremo opuesto */
+  flex-wrap: wrap;
+  gap: 12px 16px;
   align-items: center;
   margin-top: 26px;
 }
@@ -385,9 +390,12 @@ a:hover { color: rgb(0, 50, 90); }
 
 /* Los tres filtros comparten ancho, calculado para que quepa la opción
    más larga de cualquiera de ellos ("Presentación") */
+/* Todos del mismo ancho, el justo para la opción más larga de
+   cualquiera de ellos: "No disponible" */
+.select--unidad,
 .select--tipo,
 .select--alcance,
-.select--estatus { width: 140px; }
+.select--estatus { width: 124px; }
 
 .select__menu {
   position: absolute;
@@ -667,9 +675,10 @@ a:hover { color: rgb(0, 50, 90); }
   .content { padding: 22px 20px 24px 16px; }
   .filters { flex-wrap: wrap; row-gap: 12px; }
   .pagination { margin-left: auto; }
+  .select--unidad,
   .select--tipo,
   .select--alcance,
-  .select--estatus { width: 122px; }
+  .select--estatus { width: 116px; }
 }
 
 @media (max-width: 1024px) {

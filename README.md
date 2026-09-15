@@ -25,7 +25,7 @@ componentes e iconografía).
 | U. de M. | unidad de medición del producto: `Metro`, `Pieza`, `Juego` o `No disponible` |
 | Proveedor | nombre de distribuidor de autopartes |
 | Tipo | `GS1` o `No GS1` |
-| Código externo | GTIN canónico de 14 dígitos si el tipo es `GS1`; código propietario si es `No GS1` |
+| Código proveedor | GTIN canónico de 14 dígitos si el tipo es `GS1`; código propietario si es `No GS1` |
 | Alcance | `Producto` o `Presentación` |
 | Empaque | nivel de empaque: `Unidad`, `Inner`, `Caja máster` o `Pallet` |
 | Cantidad | entero mayor o igual que 1 |
@@ -38,18 +38,22 @@ calcula del código—, con el destino ya conforme a la regla RD-MOD-01 —los d
 alcance `Producto` llevan `Unidad` y `1`, y los de `Presentación`, un nivel
 agrupado y su cantidad— y con el código externo coherente con su tipo: los `GS1`
 llevan un GTIN-14 con dígito verificador correcto y los `No GS1`, un código
-propietario alfanumérico. `Código`, `Proveedor`, `Código externo` y `Alcance` comparten
+propietario alfanumérico. `Código`, `Proveedor`, `Código proveedor` y `Alcance` comparten
 ancho; `Tipo`, las de un solo número y las de control son más angostas, y
 cualquier valor más largo que su columna continúa en el siguiente renglón.
 
 ## Interacciones incluidas
 
-- **Filtros superiores**: `Tipo`, `Alcance` y `Estatus` son desplegables con las
-  mismas opciones que sus columnas, más `Todos` como valor inicial. La elección no
+- **Filtros superiores**: `U. de M.`, `Tipo`, `Alcance` y `Estatus` son
+  desplegables con las mismas opciones que sus columnas, más `Todos` como valor
+  inicial. `U. de M.` filtra por un valor que no está en la fila: lo deriva del
+  código, igual que la columna que lo muestra. La elección no
   se aplica hasta pulsar `Filtrar`, que permanece deshabilitado —en el gris de los
   controles sin acción— mientras no haya un cambio pendiente y toma su color
   `#0071B3` en cuanto lo hay. Los tres filtros se combinan entre sí y con los
-  buscadores de columna.
+  buscadores de columna. En pantallas donde los cuatro filtros, los botones y la
+  paginación no caben en una línea, la fila se reacomoda y la paginación baja de
+  renglón en lugar de desbordarse.
 - **Restablecer los filtros**: a la derecha de `Filtrar`, un botón de solo icono
   —un borrador— devuelve los tres desplegables a `Todos` y refresca la tabla a su
   estado inicial. Sigue el mismo criterio visual que su pareja: está deshabilitado
@@ -68,7 +72,7 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
 - **Botones deshabilitados**: el gris `rgb(211, 211, 211)` está reservado para
   este estado (por ejemplo `Filtrar`), sin efecto hover.
 - **Filtrado por columna**: cada campo `Buscar` del encabezado filtra únicamente
-  su propia columna —solo `Código`, `Proveedor` y `Código externo` lo llevan—,
+  su propia columna —solo `Código`, `Proveedor` y `Código proveedor` lo llevan—,
   buscando entre **todos** los registros y no solo entre los visibles en la página
   actual. El filtro se ejecuta al pulsar `Enter` y requiere un mínimo de 3
   caracteres; con menos, el campo se marca en rojo y no filtra. Los filtros
@@ -345,7 +349,7 @@ El formulario es:
 | --- | --- |
 | 1 | `Código` (con búsqueda) y `Nombre del producto` (solo lectura) |
 | 2 | `Proveedor` (con búsqueda) y `U. de M.` (solo lectura) |
-| 3 | `Tipo` y `Código externo` |
+| 3 | `Tipo` y `Código proveedor` |
 | 4 | `Alcance`, `Empaque` y `Cantidad` — el destino |
 
 `Código` admite solo dígitos y, a partir de 3, despliega los productos del catálogo

@@ -1,7 +1,7 @@
 # Archivos de ejemplo para la importación
 
 Ambos traen la hoja `Carga_Equivalencias` con la estructura de la plantilla que
-descarga el módulo: `Código`, `Proveedor`, `Tipo`, `Código externo`, `Alcance`,
+descarga el módulo: `Código`, `Proveedor`, `Tipo`, `Código proveedor`, `Alcance`,
 `Empaque`, `Cantidad` y `Estatus`.
 
 ## `Importar-correctos.xlsx`
@@ -47,7 +47,7 @@ Una incidencia clara por fila:
 | 8 | `VAL-GS1-005` | Un SSCC de 18 dígitos en lugar del GTIN |
 | 9 | `VAL-EMP-001` | Alcance `Producto` con `Pallet` y cantidad 12 |
 | 10 | `VAL-EMP-002` | Alcance `Presentación` con `Unidad` y cantidad 0 |
-| 11 | `VAL-EST-005` | Código externo de 51 caracteres |
+| 11 | `VAL-EST-005` | Código proveedor de 51 caracteres |
 | 12 | `VAL-EST-006` | La celda del código externo es una fórmula (`=A1`) |
 
 Las reglas de unicidad necesitan pares, así que van en filas consecutivas:

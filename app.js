@@ -24,7 +24,7 @@
     { label: 'U. de M.', control: 'unidad', dataIndex: null },
     { label: 'Proveedor', sortable: true, search: true, dataIndex: 1 },
     { label: 'Tipo', dataIndex: 2 },
-    { label: 'Código externo', numeric: true, search: true, dataIndex: 3 },
+    { label: 'Código proveedor', numeric: true, search: true, dataIndex: 3 },
     { label: 'Alcance', dataIndex: 4 },
     { label: 'Empaque', dataIndex: 5 },
     { label: 'Cantidad', dataIndex: 6 },
@@ -414,7 +414,7 @@
      historial: el rastro no depende de que quien llame se acuerde de
      anotarlo. */
 
-  var CAMPOS = ['Código', 'Proveedor', 'Tipo', 'Código externo', 'Alcance',
+  var CAMPOS = ['Código', 'Proveedor', 'Tipo', 'Código proveedor', 'Alcance',
                 'Empaque', 'Cantidad', 'Estatus'];
 
   /* Identificadores del personal de operaciones: cinco dígitos como máximo */
@@ -532,19 +532,32 @@
   /* Filtros superiores: 'applied' es lo que la tabla está mostrando y
      'pending' lo que el usuario ha elegido pero aún no ha aplicado. */
   var TODOS = 'Todos';
-  var applied = { tipo: TODOS, alcance: TODOS, estatus: TODOS };
-  var pending = { tipo: TODOS, alcance: TODOS, estatus: TODOS };
+  var FILTROS_SUPERIORES = ['unidad', 'tipo', 'alcance', 'estatus'];
+
+  function filtrosEnBlanco() {
+    var estado = {};
+    FILTROS_SUPERIORES.forEach(function (clave) { estado[clave] = TODOS; });
+    return estado;
+  }
+
+  var applied = filtrosEnBlanco();
+  var pending = filtrosEnBlanco();
 
   function hasPendingChanges() {
-    return pending.tipo !== applied.tipo ||
-      pending.alcance !== applied.alcance ||
-      pending.estatus !== applied.estatus;
+    return FILTROS_SUPERIORES.some(function (clave) {
+      return pending[clave] !== applied[clave];
+    });
   }
 
   /* El registro cumple los filtros superiores aplicados */
   function matchesApplied(cells) {
     if (applied.tipo !== TODOS && cells[COL_TIPO] !== applied.tipo) { return false; }
     if (applied.alcance !== TODOS && cells[COL_ALCANCE] !== applied.alcance) { return false; }
+    /* La unidad no está en la fila: se deriva del código, igual que en
+       la columna que la muestra */
+    if (applied.unidad !== TODOS && unidadDe(cells[COL_SKU]) !== applied.unidad) {
+      return false;
+    }
     if (applied.estatus !== TODOS) {
       var activo = applied.estatus === 'Activo';
       if (cells[COL_ESTATUS] !== activo) { return false; }
@@ -1044,7 +1057,7 @@
 
   /* ---------- Verificación del archivo por importar ---------- */
 
-  var COLUMNAS_ARCHIVO = ['Código', 'Proveedor', 'Tipo', 'Código externo',
+  var COLUMNAS_ARCHIVO = ['Código', 'Proveedor', 'Tipo', 'Código proveedor',
     'Alcance', 'Empaque', 'Cantidad', 'Estatus'];
 
   /* Etiqueta de las incidencias que no señalan una columna concreta,
@@ -1271,7 +1284,7 @@
       fallo(2, 'VAL-EST-005', 'El tipo debe ser GS1 o No GS1');
     }
 
-    /* Código externo. Se revisa en este orden: que la celda no sea una
+    /* Código proveedor. Se revisa en este orden: que la celda no sea una
        fórmula, que traiga algo, que no se pase de largo y, por último,
        que cumpla la norma del tipo declarado. */
     if (esFormula[3]) {
@@ -2645,7 +2658,7 @@
       },
       editando ? registro[COL_TIPO] : null);
 
-    var codigoExterno = textField('Código externo', 4,
+    var codigoExterno = textField('Código proveedor', 4,
       editando ? { value: registro[3] } : null);
 
     /* Con un registro existente el tipo ya viene afirmado: no se
@@ -2872,7 +2885,7 @@
       if (!cantidadOk && valores.cantidad === '') { faltantes.push('Cantidad'); }
 
       if (codigoVacio) {
-        faltantes.push('Código externo');
+        faltantes.push('Código proveedor');
       } else if (!revisionCodigo.valido) {
         problemas.push(revisionCodigo.mensaje);
       }
@@ -3038,9 +3051,9 @@
   /* Hay algún filtro superior puesto: el borrador tiene algo que
      restablecer */
   function hasAppliedFilters() {
-    return applied.tipo !== TODOS ||
-      applied.alcance !== TODOS ||
-      applied.estatus !== TODOS;
+    return FILTROS_SUPERIORES.some(function (clave) {
+      return applied[clave] !== TODOS;
+    });
   }
 
   function updateFilterButton() {
@@ -3064,9 +3077,7 @@
   function applyTopFilters() {
     if (!hasPendingChanges()) { return; }
 
-    applied.tipo = pending.tipo;
-    applied.alcance = pending.alcance;
-    applied.estatus = pending.estatus;
+    FILTROS_SUPERIORES.forEach(function (clave) { applied[clave] = pending[clave]; });
 
     page = 1;
     renderPagination();
@@ -3080,14 +3091,14 @@
   function clearTopFilters() {
     if (!hasAppliedFilters()) { return; }
 
-    ['selTipo', 'selAlcance', 'selEstatus'].forEach(function (id) {
+    ['selUnidad', 'selTipo', 'selAlcance', 'selEstatus'].forEach(function (id) {
       var select = document.getElementById(id);
       if (select._setSelected) { select._setSelected(TODOS); }
     });
 
-    applied.tipo = pending.tipo = TODOS;
-    applied.alcance = pending.alcance = TODOS;
-    applied.estatus = pending.estatus = TODOS;
+    FILTROS_SUPERIORES.forEach(function (clave) {
+      applied[clave] = pending[clave] = TODOS;
+    });
 
     page = 1;
     renderPagination();
@@ -3188,6 +3199,11 @@
 
   function renderSelects() {
     /* Los filtros superiores solo anotan la elección; se aplica con "Filtrar" */
+    buildSelect(document.getElementById('selUnidad'), CARET_FILTER_SVG, function (option) {
+      pending.unidad = option;
+      updateFilterButton();
+    });
+
     buildSelect(document.getElementById('selTipo'), CARET_FILTER_SVG, function (option) {
       pending.tipo = option;
       updateFilterButton();
