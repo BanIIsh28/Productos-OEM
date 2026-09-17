@@ -1347,6 +1347,7 @@ a:hover { color: rgb(0, 50, 90); }
     minmax(0, 0.7fr)    /* Código */
     minmax(0, 1.45fr)   /* Proveedor */
     minmax(0, 0.85fr)   /* Acción */
+    minmax(0, 0.95fr)   /* Origen */
     minmax(0, 1fr)      /* Campo */
     minmax(0, 1.6fr)    /* Valor anterior */
     minmax(0, 2fr);     /* Valor nuevo */
@@ -1387,6 +1388,27 @@ a:hover { color: rgb(0, 50, 90); }
 .log-cell--edicion { color: rgb(150, 110, 20); font-weight: 700; }
 .log-cell--baja { color: rgb(160, 40, 40); font-weight: 700; }
 .log-cell--reactivacion { color: rgb(0, 75, 131); font-weight: 700; }
+
+/* Las entradas de una misma carga masiva se leen como un bloque: un
+   fondo apenas azulado las agrupa y un filo más marcado abre la
+   primera, para distinguir dos cargas seguidas */
+.log-cell--carga { background: rgb(240, 246, 251); }
+.log-cell--carga-inicio { border-top: 2px solid rgb(0, 113, 179); }
+
+/* El identificador de la carga, bajo el origen: la celda es flexible en
+   fila como el resto, así que hay que voltearla para apilar los dos
+   datos en vez de ponerlos uno al lado del otro */
+.log-cell--origen {
+  flex-direction: column;
+  gap: 1px;
+}
+
+.log-cell--origen small {
+  font-size: 10px;
+  color: rgb(110, 110, 110);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
 
 /* Fila superior: los dos datos a la izquierda y la paginación al
    extremo opuesto, todo a la misma altura */

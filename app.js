@@ -433,13 +433,44 @@
     }).join(' · ');
   }
 
-  function anotar(row, accion, campo, anterior, nuevo, cuando, usuario) {
+  /* De dónde salió cada entrada. Mientras corre una carga masiva,
+     `operacionActual` guarda el identificador de esa carga: las
+     entradas se marcan solas y no depende de que quien llame se
+     acuerde de pasarlo, igual que el rastro mismo no depende de ello. */
+  var MANUAL = { origen: 'Manual', id: null };
+  var operacionActual = null;
+  var operacionesHechas = 0;
+
+  function nuevaOperacion() {
+    operacionesHechas++;
+    return {
+      origen: 'Archivo',
+      id: 'CARGA-' + String(operacionesHechas).padStart(3, '0')
+    };
+  }
+
+  /* Ejecuta `fn` marcando como de archivo todo lo que anote, y devuelve
+     el identificador de la operación */
+  function comoCargaDeArchivo(fn) {
+    var operacion = nuevaOperacion();
+    operacionActual = operacion;
+
+    try { fn(); } finally { operacionActual = null; }
+
+    return operacion.id;
+  }
+
+  function anotar(row, accion, campo, anterior, nuevo, cuando, usuario, operacion) {
+    var quien = operacion || operacionActual || MANUAL;
+
     historial.push({
       fecha: cuando || new Date(),
       usuario: usuario || USUARIO_SESION,
       sku: row[COL_SKU],
       proveedor: row[COL_PROVEEDOR],
       accion: accion,
+      origen: quien.origen,
+      operacionId: quien.id,
       campo: campo,
       anterior: anterior,
       nuevo: nuevo
@@ -447,9 +478,10 @@
   }
 
   /* Alta: el registro entra al catálogo y queda anotado */
-  function commitAlta(row, cuando, usuario) {
+  function commitAlta(row, cuando, usuario, operacion) {
     dataRows.unshift(row);
-    anotar(row, 'Alta', 'Registro completo', '', resumenRegistro(row), cuando, usuario);
+    anotar(row, 'Alta', 'Registro completo', '', resumenRegistro(row),
+      cuando, usuario, operacion);
   }
 
   /* Edición: una entrada por cada campo cuyo valor cambia.
@@ -485,11 +517,37 @@
     var DIA = 86400000;
     var ahora = Date.now();
 
-    dataRows.forEach(function (row) {
-      var alta = ahora - randomInt(30, 150) * DIA - randomInt(0, DIA - 1);
+    /* Tres cargas masivas previas: un puñado de registros entró por
+       archivo y el resto se capturó a mano */
+    var cargas = [nuevaOperacion(), nuevaOperacion(), nuevaOperacion()];
+    var deArchivo = {};
+
+    cargas.forEach(function (carga, i) {
+      var desde = randomInt(0, Math.max(0, dataRows.length - 12));
+      var fecha = new Date(ahora - (20 + i * 25) * DIA);
+      var usuario = pick(USUARIOS);
+
+      dataRows.slice(desde, desde + randomInt(4, 9)).forEach(function (row, j) {
+        deArchivo[dataRows.indexOf(row)] =
+          { carga: carga, fecha: new Date(fecha.getTime() + j * 1000), usuario: usuario };
+      });
+    });
+
+    dataRows.forEach(function (row, indice) {
+      var carga = deArchivo[indice];
+      var alta = carga ? carga.fecha.getTime()
+        : ahora - randomInt(30, 150) * DIA - randomInt(0, DIA - 1);
+
+      /* Un cambio posterior al alta nunca puede caer en el futuro: las
+         cargas masivas simuladas son recientes y el salto de días se
+         quedaría más allá de hoy */
+      function despuesDelAlta(dias) {
+        return new Date(Math.min(alta + dias * DIA, ahora));
+      }
 
       anotar(row, 'Alta', 'Registro completo', '', resumenRegistro(row),
-        new Date(alta), pick(USUARIOS));
+        new Date(alta), carga ? carga.usuario : pick(USUARIOS),
+        carga ? carga.carga : null);
 
       /* Uno de cada cuatro registros recibió después un ajuste de datos */
       if (Math.random() < 0.25) {
@@ -507,7 +565,7 @@
 
         if (String(previo) !== String(row[indice])) {
           anotar(row, 'Edición', CAMPOS[indice], previo, String(row[indice]),
-            new Date(alta + randomInt(1, 20) * DIA), pick(USUARIOS));
+            despuesDelAlta(randomInt(1, 20)), pick(USUARIOS));
         }
       }
 
@@ -515,7 +573,7 @@
       if (Math.random() < 0.17) {
         anotar(row, row[COL_ESTATUS] ? 'Reactivación' : 'Baja', 'Estatus',
           textoEstatus(!row[COL_ESTATUS]), textoEstatus(row[COL_ESTATUS]),
-          new Date(alta + randomInt(21, 28) * DIA), pick(USUARIOS));
+          despuesDelAlta(randomInt(21, 28)), pick(USUARIOS));
       }
     });
 
@@ -2217,9 +2275,11 @@
 
     /* Se insertan al principio, en el orden del archivo; cada una deja
        su entrada en la bitácora */
-    nuevas.slice().reverse().forEach(function (revision) {
-      var v = revision.valores;
-      commitAlta([v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] === 'Activo']);
+    comoCargaDeArchivo(function () {
+      nuevas.slice().reverse().forEach(function (revision) {
+        var v = revision.valores;
+        commitAlta([v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] === 'Activo']);
+      });
     });
 
     sort.index = null;
@@ -2258,6 +2318,7 @@
     { label: 'Código', key: 'sku', search: true },
     { label: 'Proveedor', key: 'proveedor', search: true, text: true },
     { label: 'Acción', key: 'accion' },
+    { label: 'Origen', key: 'origen', search: true },
     { label: 'Campo', key: 'campo' },
     { label: 'Valor anterior', key: 'anterior', text: true },
     { label: 'Valor nuevo', key: 'nuevo', text: true }
@@ -2290,6 +2351,34 @@
           .indexOf(logFilters[indice]) !== -1;
       });
     }).reverse();
+  }
+
+  /* Descarga lo que la consulta está mostrando: los filtros aplicados,
+     no el historial entero */
+  function descargarBitacora() {
+    var entradas = logRows();
+
+    if (!entradas.length) {
+      showToast('No hay entradas que descargar con los filtros aplicados', 'warning');
+      return;
+    }
+
+    var name = 'Bitacora-Productos-OEM_' + timestamp() + '.xlsx';
+
+    download(buildXlsx({
+      sheetName: 'Bitacora',
+      headers: LOG_COLUMNAS.map(function (col) { return col.label; })
+        .concat('Operación'),
+      rows: entradas.map(function (entrada) {
+        return LOG_COLUMNAS.map(function (col) { return valorLog(entrada, col.key); })
+          .concat(entrada.operacionId || '');
+      }),
+      widths: [18, 10, 12, 26, 14, 12, 18, 26, 30, 14],
+      textColumns: [1, 2]
+    }), name);
+
+    showToast('Se descargó ' + name + ' con ' + entradas.length +
+      (entradas.length === 1 ? ' entrada' : ' entradas'), 'success');
   }
 
   function openLogModal() {
@@ -2404,8 +2493,22 @@
 
       var inicio = (logPage - 1) * logPageSize;
 
-      entradas.slice(inicio, inicio + logPageSize).forEach(function (entrada, i) {
+      var pagina = entradas.slice(inicio, inicio + logPageSize);
+
+      pagina.forEach(function (entrada, i) {
         var base = 'preview-table__td ' + (i % 2 === 0 ? 'row--even' : 'row--odd');
+
+        /* Las entradas de una misma carga van seguidas —el historial se
+           ordena por fecha—, así que basta mirar la anterior para saber
+           si esta abre un bloque nuevo */
+        var deCarga = !!entrada.operacionId;
+        var abreBloque = deCarga &&
+          (i === 0 || pagina[i - 1].operacionId !== entrada.operacionId);
+
+        if (deCarga) {
+          base += ' log-cell--carga';
+          if (abreBloque) { base += ' log-cell--carga-inicio'; }
+        }
 
         LOG_COLUMNAS.forEach(function (col) {
           var td = el('div', base + (col.text ? ' log-cell--text' : ''));
@@ -2417,6 +2520,10 @@
             td.classList.add('log-cell--' + normalize(entrada.accion));
           } else if (col.key === 'anterior') {
             td.classList.add('log-cell--old');
+          } else if (col.key === 'origen' && entrada.operacionId) {
+            /* El identificador solo aporta bajo el origen que lo tiene */
+            td.classList.add('log-cell--origen');
+            td.appendChild(el('small')).textContent = entrada.operacionId;
           }
 
           tabla.appendChild(td);
@@ -2444,7 +2551,12 @@
       wide: true,
       xwide: true,
       aside: pie,
-      buttons: [{ label: 'Cerrar', variant: 'cancel' }]
+      buttons: [
+        /* Devolver false deja la ventana abierta: descargar es una
+           consulta más, no el final de la consulta */
+        { label: 'Descargar', variant: 'save', onClick: function () { descargarBitacora(); return false; } },
+        { label: 'Cerrar', variant: 'cancel' }
+      ]
     });
 
     /* El desplegable se construye una vez la ventana está en el documento */

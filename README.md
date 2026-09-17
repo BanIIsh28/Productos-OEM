@@ -544,8 +544,8 @@ ellas el alta desde el formulario, el alta masiva de cada registro de un archivo
 importado, la edición desde el lápiz y el cambio de estatus desde el interruptor.
 
 Cada entrada guarda el **usuario** que hizo el cambio (un identificador de cinco
-dígitos como máximo), el **campo modificado**, el **valor anterior**, el **valor
-nuevo** y la **fecha y hora**. Según la acción:
+dígitos como máximo), el **origen**, el **campo modificado**, el **valor
+anterior**, el **valor nuevo** y la **fecha y hora**. Según la acción:
 
 | Acción | Campo | Valor anterior | Valor nuevo |
 | --- | --- | --- | --- |
@@ -558,11 +558,31 @@ Una edición que toca tres campos deja tres entradas, una por campo. La acción 
 distingue por color: `Alta` en verde, `Edición` en ámbar, `Baja` en rojo y
 `Reactivación` en el azul del módulo.
 
+#### De dónde vino cada cambio
+
+La columna `Origen`, junto a `Acción`, distingue lo capturado a mano (`Manual`) de
+lo que entró por una carga masiva (`Archivo`). Las entradas de archivo llevan
+además, debajo, el identificador de su carga —`CARGA-001`, `CARGA-002`…—, de modo
+que un archivo de sesenta registros se lee como una sola operación y no como
+sesenta cambios sueltos: comparten un fondo levemente azulado y un filo azul abre
+la primera entrada del bloque, lo que separa dos cargas seguidas.
+
+El origen tampoco depende de que quien anota se acuerde de ponerlo. `importRows`
+envuelve las altas del archivo en `comoCargaDeArchivo()`, que marca como de
+archivo todo lo que se anote mientras corre y libera la marca al terminar; fuera
+de esa ventana, cualquier entrada es `Manual`. Es el mismo criterio con el que se
+garantiza el rastro: una sola puerta, no una convención que recordar.
+
+`Origen` se busca como las demás columnas —`Archivo` o `Manual`, mínimo 3
+caracteres— y se combina con el resto de los filtros.
+
+#### Consulta y descarga
+
 La vista se ordena de lo más reciente a lo más antiguo y se filtra por `Fecha y
-hora`, `Usuario`, `Código` y `Proveedor`, con los mismos campos `Buscar` del
+hora`, `Usuario`, `Código`, `Proveedor` y `Origen`, con los mismos campos `Buscar` del
 encabezado que usa la tabla del catálogo: `Enter` para ejecutar, mínimo 3
 caracteres, vaciar el campo retira su filtro y la comparación ignora mayúsculas y
-acentos. **Los cuatro filtros se combinan entre sí**, de modo que un usuario y un
+acentos. **Los cinco filtros se combinan entre sí**, de modo que un usuario y un
 código dejan solo los cambios de esa persona sobre ese registro. La fecha se busca
 sobre el texto `dd/mm/aaaa hh:mm`, así que `09/2026` acota un mes y `04/09` un día.
 Los filtros se conservan al cerrar y reabrir la ventana, para retomar la consulta.
@@ -576,6 +596,14 @@ más, extremos deshabilitados en el gris reservado y la página actual sin acci�
 su propio gris. Cambiar de página devuelve el desplazamiento al principio de la
 tabla, y filtrar vuelve a la primera página.
 
+El botón `Descargar`, en el pie junto a `Cerrar`, baja a `.xlsx` **las entradas
+que la consulta está mostrando** —con los filtros aplicados, no el historial
+entero—, en un archivo `Bitacora-Productos-OEM_<fecha>-<hora>.xlsx` con las nueve
+columnas de la vista más el identificador de la operación en una décima. Un toast
+confirma el nombre y cuántas entradas incluye, o avisa si los filtros no dejan
+ninguna. La ventana **no se cierra** al descargar: descargar es un paso más de la
+consulta, no su final.
+
 En el pie, a la izquierda del botón `Cerrar` y a su misma altura, el selector
 `Registros por página` con las opciones 25, 50, 75 y 100 —el mismo control del pie
 de la vista principal, desplegándose hacia arriba—. La elección y los filtros se
@@ -585,7 +613,8 @@ fijo, así que la ventana mide lo mismo con 25 registros por página que con 100
 
 El catálogo arranca con un historial previo verosímil —el alta de cada uno de los
 182 registros más algunas ediciones y cambios de estatus repartidos en los últimos
-meses, a nombre de distintos usuarios—, de modo que la vista tenga contenido desde
+meses, a nombre de distintos usuarios, con tres cargas masivas simuladas entre las
+altas para que la columna `Origen` traiga las dos procedencias desde el arranque—, de modo que la vista tenga contenido desde
 el principio. El valor nuevo de la última entrada de cada campo coincide siempre
 con lo que la tabla muestra hoy.
 
