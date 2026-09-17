@@ -1574,6 +1574,31 @@
         'El código propietario aparece en el archivo con destinos distintos ' +
         'para el mismo proveedor');
     });
+
+    revisarUnicidadContraCatalogo(limpias);
+  }
+
+  /* El archivo no compite solo consigo mismo: una fila puede ser
+     impecable entre sus compañeras y aun así chocar con lo que ya está
+     en el catálogo. Se reutiliza la misma función que usa el alta
+     manual, para que las dos vías no puedan divergir.
+
+     VAL-UNI-002 se ignora aquí a propósito: una fila idéntica a una del
+     catálogo no es un error en la carga masiva, es una fila
+     `sin_cambio` (o `con_aviso` si solo difiere el estatus), y
+     clasificarFila ya la trata como tal. */
+  function revisarUnicidadContraCatalogo(limpias) {
+    limpias.forEach(function (revision) {
+      var v = revision.valores;
+
+      conflictosDeUnicidad({
+        proveedor: v[1], tipo: v[2], codigo: v[3],
+        alcance: v[4], empaque: v[5], cantidad: v[6]
+      }, null).forEach(function (choque) {
+        if (choque.codigo === 'VAL-UNI-002') { return; }
+        agregarIncidencia(revision, choque.codigo, choque.mensaje, 3);
+      });
+    });
   }
 
   /* Marca el grupo solo si sus integrantes no comparten el mismo destino */

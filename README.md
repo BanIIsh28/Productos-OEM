@@ -240,11 +240,22 @@ rechazada, y compararla contra las demás daría incidencias sin sentido—:
 | `VAL-UNI-003` | Dos filas `GS1` con el mismo GTIN y destino distinto, **sea cual sea el proveedor** |
 | `VAL-UNI-004` | Dos filas `No GS1` del **mismo proveedor** con el mismo código y destino distinto |
 
-Las tres rechazan el archivo completo. `VAL-UNI-003` y `VAL-UNI-004` se
-aplican también en el alta y la edición manual; ver **Unicidad en el alta y la
-edición manual**. Dos filas `No GS1` con el mismo código
+Las tres rechazan el archivo completo. Dos filas `No GS1` con el mismo código
 pero **proveedores distintos** no generan incidencia de ningún tipo, aunque sus
 destinos difieran: es intencional (CF-51775-29).
+
+El archivo tampoco compite solo consigo mismo: cada fila que llega limpia se
+compara además contra el catálogo ya cargado, con la misma función que usa el
+alta manual (`conflictosDeUnicidad`), de modo que las dos vías no puedan
+divergir. Así, `VAL-UNI-003` y `VAL-UNI-004` se levantan igual cuando el destino
+en conflicto está en otra fila del archivo que cuando está en un registro
+existente, y en los dos casos bloquean el archivo entero.
+
+`VAL-UNI-002` se ignora a propósito en esta comparación: una fila idéntica a una
+del catálogo no es un error en la carga masiva —es una fila `sin cambio`, o `con
+aviso` si solo difiere el estatus—, y la clasificación ya la trata como tal. Solo
+el alta y la edición manual lo levantan; ver **Unicidad en el alta y la edición
+manual**.
 
 #### Los tres estados de la previsualización
 
