@@ -592,9 +592,21 @@
   var TODOS = 'Todos';
   var FILTROS_SUPERIORES = ['unidad', 'tipo', 'alcance', 'estatus'];
 
+  /* La vista arranca mostrando solo lo vigente: un catálogo se consulta
+     para operar con él, y los registros dados de baja estorban más de lo
+     que aportan. El resto de los filtros no tiene un valor preferente,
+     así que parten de `Todos`. */
+  var FILTROS_INICIALES = { estatus: 'Activo' };
+
+  function valorInicial(clave) {
+    return FILTROS_INICIALES[clave] || TODOS;
+  }
+
   function filtrosEnBlanco() {
     var estado = {};
-    FILTROS_SUPERIORES.forEach(function (clave) { estado[clave] = TODOS; });
+    FILTROS_SUPERIORES.forEach(function (clave) {
+      estado[clave] = valorInicial(clave);
+    });
     return estado;
   }
 
@@ -3291,7 +3303,7 @@
      restablecer */
   function hasAppliedFilters() {
     return FILTROS_SUPERIORES.some(function (clave) {
-      return applied[clave] !== TODOS;
+      return applied[clave] !== valorInicial(clave);
     });
   }
 
@@ -3330,13 +3342,14 @@
   function clearTopFilters() {
     if (!hasAppliedFilters()) { return; }
 
-    ['selUnidad', 'selTipo', 'selAlcance', 'selEstatus'].forEach(function (id) {
-      var select = document.getElementById(id);
-      if (select._setSelected) { select._setSelected(TODOS); }
-    });
+    var SELECTS = { unidad: 'selUnidad', tipo: 'selTipo',
+      alcance: 'selAlcance', estatus: 'selEstatus' };
 
     FILTROS_SUPERIORES.forEach(function (clave) {
-      applied[clave] = pending[clave] = TODOS;
+      var select = document.getElementById(SELECTS[clave]);
+      if (select._setSelected) { select._setSelected(valorInicial(clave)); }
+
+      applied[clave] = pending[clave] = valorInicial(clave);
     });
 
     page = 1;
@@ -3456,7 +3469,7 @@
     buildSelect(document.getElementById('selEstatus'), CARET_FILTER_SVG, function (option) {
       pending.estatus = option;
       updateFilterButton();
-    });
+    }, valorInicial('estatus'));
     /* El número de registros por página redefine la paginación */
     buildSelect(document.getElementById('selRows'), CARET_ROWS_SVG, function (option) {
       pageSize = Number(option);

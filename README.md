@@ -45,8 +45,10 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
 ## Interacciones incluidas
 
 - **Filtros superiores**: `U. de M.`, `Tipo`, `Alcance` y `Estatus` son
-  desplegables con las mismas opciones que sus columnas, más `Todos` como valor
-  inicial. `U. de M.` filtra por un valor que no está en la fila: lo deriva del
+  desplegables con las mismas opciones que sus columnas, más `Todos`. Tres de
+  ellos arrancan en `Todos`; `Estatus` arranca en **`Activo`**: el catálogo se
+  consulta para operar con él y lo dado de baja estorba más de lo que aporta.
+  Verlo todo es elegir `Todos` y pulsar `Filtrar`. `U. de M.` filtra por un valor que no está en la fila: lo deriva del
   código, igual que la columna que lo muestra. La elección no
   se aplica hasta pulsar `Filtrar`, que permanece deshabilitado —en el gris de los
   controles sin acción— mientras no haya un cambio pendiente y toma su color
@@ -58,7 +60,9 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
   —un borrador— devuelve los tres desplegables a `Todos` y refresca la tabla a su
   estado inicial. Sigue el mismo criterio visual que su pareja: está deshabilitado
   mientras no haya **ningún filtro aplicado**, no solo elegido, y se enciende en
-  cuanto lo hay. **No toca los buscadores de columna**: esos son otro filtro y se
+  cuanto lo hay. «Ningún filtro» significa que cada desplegable está en su valor
+  inicial, así que `Estatus` en `Activo` cuenta como reposo y devolverlo ahí es
+  lo que hace el borrador, no dejarlo en `Todos`. **No toca los buscadores de columna**: esos son otro filtro y se
   vacían desde su propio campo.
 - **Selects desplegables**: se abren al hacer clic, marcan la opción seleccionada,
   y se cierran al elegir una opción, al hacer clic fuera o con `Esc`. Muestran
@@ -92,7 +96,9 @@ cualquier valor más largo que su columna continúa en el siguiente renglón.
   sentido activo se resalta.
 
 - **Exportar a Excel**: el botón `Exportar` descarga un archivo `.xlsx` real con
-  los registros de la tabla, respetando los filtros y el orden aplicados. El
+  los registros de la tabla, respetando los filtros y el orden aplicados —incluido
+  el `Estatus` inicial, así que una exportación sin tocar los filtros trae solo lo
+  activo—. El
   encabezado se genera con el azul corporativo y los identificadores como valores
   numéricos. Un toast confirma el nombre del archivo y cuántos registros incluye.
 
