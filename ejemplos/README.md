@@ -29,8 +29,8 @@ nombres de su lista:
 
 ## `Importar-incompletos.xlsx`
 
-Diecinueve registros que recorren el catálogo de incidencias de la verificación:
-diecisiete filas con error y dos que, a propósito, **no** generan ninguna. Todas
+Veinte registros que recorren el catálogo de incidencias de la verificación:
+dieciocho filas con error y dos que, a propósito, **no** generan ninguna. Todas
 las incidencias son bloqueantes, así que el archivo entero se rechaza
 (`RES-VAL-002 · VALIDACIÓN FALLIDA`) y no se ofrece `Continuar`.
 
@@ -58,7 +58,23 @@ Las reglas de unicidad necesitan pares, así que van en filas consecutivas:
 | 15 y 16 | `VAL-UNI-003` | El mismo GTIN con destinos distintos, entre proveedores distintos |
 | 17 y 18 | `VAL-UNI-004` | El mismo código propietario del mismo proveedor con destinos distintos |
 
-Las **filas 19 y 20** cierran el archivo con el caso CF-51775-29: dos registros
+La unicidad no se agota dentro del archivo: una fila puede ser impecable entre sus
+compañeras y aun así chocar con lo que ya está cargado. La **fila 19** demuestra
+justamente ese caso, y por eso va sola:
+
+| Fila | Código | Qué trae |
+| --- | --- | --- |
+| 19 | `VAL-UNI-003` | El GTIN `07500001234563` con alcance `Producto`, mientras el catálogo ya lo tiene en `Presentación · Caja máster · 24` |
+
+La diferencia con las filas 15-16 y 17-18 está en contra qué chocan: aquellas
+chocan **entre sí**, dentro del archivo; esta choca contra un registro que ya
+existe en el catálogo desde el arranque —la fila ancla del módulo, código
+`1001293` de `Robert Bosch México`, fija en cualquier sesión justamente para que
+este ejemplo sea reproducible—, y no contra ninguna otra fila del archivo. El
+proveedor tampoco importa: la fila 19 trae otro y la incidencia se levanta igual,
+porque un GTIN no puede apuntar a dos destinos sea de quien sea.
+
+Las **filas 20 y 21** cierran el archivo con el caso CF-51775-29: dos registros
 `No GS1` con el mismo código propietario, **proveedores distintos** y destinos
 distintos. No son incidencia de ningún tipo, así que se cuentan como `Nuevas` y
 no aparecen en la tabla —justo lo que hace la previsualización con las filas sin

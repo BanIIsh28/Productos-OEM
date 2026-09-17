@@ -340,11 +340,21 @@
      cantidad, activo]. El código corresponde a un producto del catálogo,
      de modo que al editar
      un registro se pueda resolver el nombre del producto. */
+  /* Fila ancla, fija a propósito para que los archivos de ejemplo puedan
+     demostrar la unicidad contra el catálogo de forma reproducible en
+     cualquier sesión: el resto del catálogo se genera al azar en cada
+     carga, así que un código fijo en un .xlsx no tendría con qué chocar.
+     Su GTIN está en forma canónica y con dígito verificador correcto. */
+  var FILA_ANCLA = ['1001293', 'Robert Bosch México', 'GS1', '07500001234563',
+    'Presentación', 'Caja máster', '24', true];
+
   var dataRows = (function buildRows() {
-    var rows = [];
+    var rows = [FILA_ANCLA];
     var usados = {};
 
-    while (rows.length < 182) {
+    usados[FILA_ANCLA[0]] = true;
+
+    while (rows.length < 183) {
       var producto = pick(CATALOGO);
       var sku = producto.codigo;
       if (usados[sku]) { continue; }

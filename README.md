@@ -32,7 +32,10 @@ componentes e iconografía).
 | Estatus | interruptor circular que alterna activo (azul) e inactivo (gris) |
 | Acciones | botón ámbar de esquinas redondeadas con icono de lápiz relleno y sugerencia `Editar` |
 
-Los 182 registros de ejemplo se generan al cargar la vista, con valores aleatorios
+Los 183 registros de ejemplo se generan al cargar la vista —182 con valores
+aleatorios y una **fila ancla** fija: código `1001293`, `Robert Bosch México`,
+GTIN `07500001234563` y destino `Presentación · Caja máster · 24`, para que los
+archivos de ejemplo puedan chocar contra algo conocido en cualquier sesión—,
 dentro de esos rangos —salvo `U. de M.`, que no es un dato de la fila sino que se
 calcula del código—, con el destino ya conforme a la regla RD-MOD-01 —los de
 alcance `Producto` llevan `Unidad` y `1`, y los de `Presentación`, un nivel
@@ -321,8 +324,9 @@ Además, **si aun así no cabe, arranca más arriba** —`clamp(16px, 4vh, 40px)
 lugar de `clamp(60px, 16vh, 220px)`—; una previsualización corta, como la de un
 archivo sin incidencias o la de un rechazo estructural, abre a la misma altura
 que el resto de las ventanas del módulo. Con el archivo de ejemplo más cargado
-—19 filas, 17 con incidencia— cabe completa en 1280×720, 1366×768, 1440×900 y
-1920×1080; en esta última ni siquiera necesita subirse.
+—20 filas, 18 con incidencia— cabe completa en 1280×720, 1366×768, 1440×900 y
+1920×1080 sin necesidad de subirse, porque la lista de incidencias pagina a 25 y
+no crece más allá de su propio alto.
 
 *Nota*: el catálogo de códigos —alias, severidad y corrección recomendada— va en
 línea en `app.js` con valores razonables, pendiente de venir de una fuente
@@ -625,7 +629,7 @@ altura de la ventana y a partir de ahí se desplaza internamente con el encabeza
 fijo, así que la ventana mide lo mismo con 25 registros por página que con 100.
 
 El catálogo arranca con un historial previo verosímil —el alta de cada uno de los
-182 registros más algunas ediciones y cambios de estatus repartidos en los últimos
+183 registros más algunas ediciones y cambios de estatus repartidos en los últimos
 meses, a nombre de distintos usuarios, con tres cargas masivas simuladas entre las
 altas para que la columna `Origen` traiga las dos procedencias desde el arranque—, de modo que la vista tenga contenido desde
 el principio. El valor nuevo de la última entrada de cada campo coincide siempre
