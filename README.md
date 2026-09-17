@@ -352,6 +352,13 @@ equivalencias nuevas` o `El archivo se aplicó sin cambios: ninguna fila era
 nueva`— y entre paréntesis dice cuántas se omitieron y por qué. Si hay algún
 error, ese botón no se ofrece y el de cancelar pasa a llamarse `Cerrar`.
 
+Una fila cargada puede quedar fuera de la vista: el archivo trae su propio
+`Estatus` y la tabla arranca mostrando solo lo activo, así que una equivalencia
+inactiva entra al catálogo sin aparecer en pantalla. El toast lo dice en vez de
+dejar buscando un registro que sí se cargó —`…, aunque la del código 1175731 no se
+muestra con los filtros aplicados`, o `…, aunque 3 no se muestran…` cuando son
+varias— y pasa a ámbar, el mismo criterio que sigue el alta desde el formulario.
+
 ### Formulario de equivalencia
 
 La misma ventana sirve para dar de alta una equivalencia, desde

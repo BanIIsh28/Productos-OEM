@@ -2286,11 +2286,17 @@
     var conAviso = revisiones.filter(function (r) { return r.clase === 'con_aviso'; });
 
     /* Se insertan al principio, en el orden del archivo; cada una deja
-       su entrada en la bitácora */
+       su entrada en la bitácora. Se guarda la referencia de cada fila
+       para poder decir después cuáles quedaron a la vista. */
+    var filasNuevas = [];
+
     comoCargaDeArchivo(function () {
       nuevas.slice().reverse().forEach(function (revision) {
         var v = revision.valores;
-        commitAlta([v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] === 'Activo']);
+        var row = [v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] === 'Activo'];
+
+        commitAlta(row);
+        filasNuevas.push(row);
       });
     });
 
@@ -2312,9 +2318,29 @@
       return;
     }
 
-    showToast('Se aplicó el archivo: ' + nuevas.length +
-      (nuevas.length === 1 ? ' equivalencia nueva' : ' equivalencias nuevas') + cola,
-      'success');
+    /* Un registro cargado que los filtros dejan fuera se busca en vano:
+       el archivo trae su propio estatus y la vista arranca mostrando
+       solo lo activo. Se avisa igual que en el alta manual. */
+    var visibles = filteredRows();
+    var ocultas = filasNuevas.filter(function (row) {
+      return visibles.indexOf(row) === -1;
+    });
+
+    var recuento = nuevas.length +
+      (nuevas.length === 1 ? ' equivalencia nueva' : ' equivalencias nuevas');
+
+    if (!ocultas.length) {
+      showToast('Se aplicó el archivo: ' + recuento + cola, 'success');
+      return;
+    }
+
+    /* Con una sola oculta se nombra su código, como hace el alta manual */
+    var detalle = ocultas.length === 1
+      ? 'la del código ' + ocultas[0][COL_SKU] + ' no se muestra'
+      : ocultas.length + ' no se muestran';
+
+    showToast('Se aplicó el archivo: ' + recuento + cola +
+      ', aunque ' + detalle + ' con los filtros aplicados', 'warning');
   }
 
   /* ---------- Ventana de la bitácora ----------
