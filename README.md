@@ -240,7 +240,9 @@ rechazada, y compararla contra las demás daría incidencias sin sentido—:
 | `VAL-UNI-003` | Dos filas `GS1` con el mismo GTIN y destino distinto, **sea cual sea el proveedor** |
 | `VAL-UNI-004` | Dos filas `No GS1` del **mismo proveedor** con el mismo código y destino distinto |
 
-Las tres rechazan el archivo completo. Dos filas `No GS1` con el mismo código
+Las tres rechazan el archivo completo. `VAL-UNI-003` y `VAL-UNI-004` se
+aplican también en el alta y la edición manual; ver **Unicidad en el alta y la
+edición manual**. Dos filas `No GS1` con el mismo código
 pero **proveedores distintos** no generan incidencia de ningún tipo, aunque sus
 destinos difieran: es intencional (CF-51775-29).
 
@@ -307,7 +309,7 @@ que el resto de las ventanas del módulo. Con el archivo de ejemplo más cargado
 
 *Nota*: el catálogo de códigos —alias, severidad y corrección recomendada— va en
 línea en `app.js` con valores razonables, pendiente de venir de una fuente
-externa. Los códigos `VAL-MAE-001/002`, `VAL-UNI-001/003/004/005`,
+externa. Los códigos `VAL-MAE-001/002`, `VAL-UNI-001/002/003/004/005/006`,
 `VAL-GS1-001/002/003/004/005` y `VAL-EMP-001/002` son los de la historia.
 Quedan pendientes por falta de dato en el catálogo simulado: `VAL-PRV-001/002`
 (matriz proveedor-identificador OEM/no-OEM) y `VAL-MAE-003` (nivel de empaque
@@ -490,6 +492,33 @@ principio de la tabla: se retira el orden y se vuelve a la primera página para
 dejarla a la vista, queda resaltada unos segundos y un toast lo confirma —o
 advierte si los filtros activos la dejan fuera—. Los registros nuevos entran
 activos.
+
+#### Unicidad en el alta y la edición manual
+
+Las reglas de unicidad no son solo de la carga masiva: el formulario comprueba la
+equivalencia capturada contra el catálogo antes de guardarla, tanto al dar de alta
+como al editar. La comprobación vive en una única función compartida,
+`conflictosDeUnicidad(candidato, excluir)`, que reutiliza las mismas claves que la
+importación (`claveAsociacion`, `codigoCanonico`, `destinoDe`), de modo que los dos
+caminos no puedan divergir:
+
+| Código | Regla |
+| --- | --- |
+| `VAL-UNI-002` | Ya existe en el catálogo una asociación idéntica —mismo proveedor, tipo, código normalizado y destino—, esté activa o inactiva |
+| `VAL-UNI-003` | El GTIN ya está en el catálogo con otro destino, **sea cual sea el proveedor** |
+| `VAL-UNI-004` | Ese proveedor ya usa ese código `No GS1` con otro destino |
+
+Las tres bloquean el guardado: el campo `Código proveedor` se marca en rojo, un
+toast de error da el código, la fila con la que choca y la corrección recomendada,
+y la ventana **permanece abierta** para corregir sin perder lo capturado. Al
+editar, el propio registro se excluye de la comparación, así que reabrir una
+equivalencia y cambiar algo ajeno a su identidad —el código de producto, por
+ejemplo— no la hace chocar consigo misma.
+
+`VAL-UNI-006` —un código admite una sola asociación de proveedor— está en el
+catálogo de incidencias pero **nada lo dispara todavía**: exige separar la
+equivalencia canónica de la asociación de proveedor, que este prototipo aún no
+modela. Queda declarado para que el código exista cuando esa separación llegue.
 
 ### Bitácora de cambios
 

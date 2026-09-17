@@ -1106,6 +1106,12 @@
       severidad: 'ERROR',
       correccion: 'Deja una sola fila con esa combinación y vuelve a cargar el archivo.'
     },
+    'VAL-UNI-002': {
+      alias: 'Asociación duplicada',
+      severidad: 'ERROR',
+      correccion: 'Ya existe una asociación idéntica (mismo proveedor, tipo, ' +
+        'código y destino). Edítala en vez de crear una nueva.'
+    },
     'VAL-UNI-003': {
       alias: 'GTIN con destino incompatible',
       severidad: 'ERROR',
@@ -1123,6 +1129,16 @@
       severidad: 'INFORMACION',
       correccion: 'La reactivación se hace desde la pantalla de baja y ' +
         'reactivación, no desde la carga masiva.'
+    },
+    /* PENDIENTE: todavía no lo dispara nada. Hace falta cuando exista la
+       pantalla de "agregar proveedor a una equivalencia existente", que
+       a su vez depende de separar la equivalencia canónica de la
+       asociación de proveedor. Queda declarado para no perderlo. */
+    'VAL-UNI-006': {
+      alias: 'El código admite una sola asociación de proveedor',
+      severidad: 'ERROR',
+      correccion: 'Un código propietario (No GS1) solo puede tener un ' +
+        'proveedor asociado. Registra el otro proveedor con su propio código.'
     },
     'VAL-EST-001': {
       alias: 'Hoja "' + 'Carga_Equivalencias' + '" no encontrada',
@@ -1384,6 +1400,70 @@
   function claveDeRegistro(row) {
     return claveAsociacion(row[1], row[COL_TIPO], row[3],
       row[COL_ALCANCE], row[5], row[6]);
+  }
+
+  /* ---------- Unicidad contra el catálogo ----------
+
+     La misma regla rige los dos flujos —el alta y la edición manual, y
+     la carga masiva—, así que vive una sola vez y ambos la llaman.
+
+     'candidato' son los seis datos que forman la identidad de una
+     asociación; 'excluir' es la fila del propio registro cuando se está
+     editando, para que no choque consigo misma. Devuelve como mucho un
+     conflicto por código, el primero que encuentra. */
+
+  function describeFila(row) {
+    return 'código ' + row[COL_SKU] + ', ' + row[COL_ALCANCE] + ', ' +
+      row[5] + ', cantidad ' + row[6];
+  }
+
+  function conflictosDeUnicidad(candidato, excluir) {
+    var clave = claveAsociacion(candidato.proveedor, candidato.tipo, candidato.codigo,
+      candidato.alcance, candidato.empaque, candidato.cantidad);
+
+    var codigo = codigoCanonico(candidato.tipo, candidato.codigo);
+    var destino = destinoDe(candidato.alcance, candidato.empaque, candidato.cantidad);
+
+    var encontrados = {};
+
+    function anotarChoque(cod, mensaje, row) {
+      if (!encontrados[cod]) {
+        encontrados[cod] = { codigo: cod, mensaje: mensaje, fila: row };
+      }
+    }
+
+    dataRows.forEach(function (row) {
+      if (row === excluir) { return; }
+
+      /* La asociación exacta ya está en el catálogo */
+      if (claveDeRegistro(row) === clave) {
+        anotarChoque('VAL-UNI-002',
+          'Ya existe esta misma asociación en el catálogo (' + describeFila(row) +
+          ', ' + (row[COL_ESTATUS] ? 'activa' : 'inactiva') + ')', row);
+        return;
+      }
+
+      /* De aquí en adelante solo interesan las filas de la misma clase
+         con el mismo código y distinto destino */
+      if (row[COL_TIPO] !== candidato.tipo) { return; }
+      if (codigoCanonico(row[COL_TIPO], row[3]) !== codigo) { return; }
+      if (destinoDe(row[COL_ALCANCE], row[5], row[6]) === destino) { return; }
+
+      if (candidato.tipo === 'GS1') {
+        /* Un GTIN identifica al mismo producto sea cual sea el proveedor */
+        anotarChoque('VAL-UNI-003',
+          'El GTIN ya está en el catálogo con otro destino: ' + describeFila(row), row);
+      } else if (normalize(row[COL_PROVEEDOR]) === normalize(candidato.proveedor)) {
+        /* Un código propietario solo choca dentro del mismo proveedor:
+           el mismo texto en otro proveedor no es incidencia (CF-51773-10) */
+        anotarChoque('VAL-UNI-004',
+          'Ese proveedor ya usa ese código con otro destino: ' + describeFila(row), row);
+      }
+    });
+
+    return ['VAL-UNI-002', 'VAL-UNI-003', 'VAL-UNI-004']
+      .filter(function (cod) { return encontrados[cod]; })
+      .map(function (cod) { return encontrados[cod]; });
   }
 
   /**
@@ -2921,6 +3001,28 @@
       var proveedorCatalogo = PROVEEDORES.filter(function (nombre) {
         return normalize(nombre) === normalize(valores.proveedor);
       })[0];
+
+      /* Unicidad contra el catálogo, con la misma regla que aplica la
+         carga masiva. Al editar se excluye el propio registro, para que
+         no choque consigo mismo cuando no se tocó su identidad. */
+      var choque = conflictosDeUnicidad({
+        proveedor: proveedorCatalogo,
+        tipo: valores.tipo,
+        codigo: valores.codigo,
+        alcance: valores.alcance,
+        empaque: valores.empaque,
+        cantidad: valores.cantidad
+      }, editando ? registro : null)[0];
+
+      if (choque) {
+        /* El código es el dato que identifica el choque en los tres casos */
+        marcar(codigoExterno, true);
+
+        showToast(choque.codigo + ' · ' + choque.mensaje + '. ' +
+          correccionDe(choque.codigo), 'error');
+
+        return false;   /* la ventana permanece abierta */
+      }
 
       if (editando) {
         updateEquivalence(registro, [
