@@ -180,24 +180,29 @@ en `filteredRows()` (el mismo criterio que el alta manual).
 
 ## Archivos de ejemplo (`ejemplos/`)
 
-- **`Importar-correctos.xlsx`** — 5 filas válidas que cubren: 2 `Producto` (una con
-  `Unidad`/`1` escritos y otra con esas celdas vacías), 3 `Presentación` (`Inner`,
-  `Caja máster`, `Pallet`); 3 `GS1` (13 dígitos, el mismo en 14 con su cero, y 12)
-  y 2 `No GS1`. **Una de las cinco (código `1175731`) viene `Inactivo`** a propósito
-  (demuestra el aviso de fila oculta). Códigos: `1001000, 1023711, 1054701,
-  1175731, 1256613`. Resultado: `RES-VAL-001 · VALIDADA`, `Nuevas = 5`.
-- **`Importar-incompletos.xlsx`** — 20 filas: 18 con error y 2 sin incidencia; el
-  archivo se rechaza completo. Una incidencia clara por fila: 2 `VAL-EST-004`
+- **`Importar-correctos.xlsx`** — 5 filas válidas y **todas activas**, que cubren: 2
+  `Producto` (una con `Unidad`/`1` escritos y otra con esas celdas vacías), 3
+  `Presentación` (`Inner`, `Caja máster`, `Pallet`); 3 `GS1` (13 dígitos, el mismo en
+  14 con su cero, y 12) y 2 `No GS1`. Las filas 2 y 3 son el **mismo producto** con el
+  mismo GTIN de dos proveedores. Códigos: `1001000, 1001000, 1054701, 1175731,
+  1256613`. Resultado: `RES-VAL-001 · VALIDADA`, `Nuevas = 5` y, al continuar, aviso
+  verde con las 5 filas visibles.
+- **`Importar-incompletos.xlsx`** — 18 filas: 16 con error y 2 sin incidencia; **un
+  caso de cada incidencia bloqueante que puede salir de un archivo** (14 códigos);
+  el archivo se rechaza completo. Cada fila falla por una sola cosa: 2 `VAL-EST-004`
   (código vacío) · 3 `VAL-MAE-001` (9999999) · 4 `VAL-MAE-002` (proveedor inventado)
-  · 5 `VAL-GS1-003` · 6 `VAL-GS1-002` (11 dígitos) · 7 `VAL-GS1-004` · 8 `VAL-GS1-005` ·
-  9 `VAL-EMP-001` · 10 `VAL-EMP-002` (`Unidad` y 0) · 11 `VAL-EST-005` (51 caracteres)
-  · 12 `VAL-EST-006` (fórmula `=A1`) · 13-14 `VAL-UNI-001` · 15-16 `VAL-UNI-003`
-  (**entre sí**, dentro del archivo) · 17-18 `VAL-UNI-004` · **19 `VAL-UNI-003` contra
-  el catálogo**: GTIN `07500001234563` con alcance `Producto`, que choca con la **fila
-  ancla** (`1001293`, Robert Bosch México, `Presentación · Caja máster · 24`) · 20-21
+  · 5 `VAL-GS1-003` · 6 `VAL-GS1-002` (11 dígitos) · 7 `VAL-GS1-004` · 8 `VAL-GS1-005`
+  · 9 `VAL-EMP-001` (`Producto` con `Pallet`) · 10 `VAL-EMP-002` (`Presentación` con
+  `Unidad`) · 11 `VAL-EST-005` (51 caracteres) · 12 `VAL-EST-006` (fórmula `=A1`) ·
+  13-14 `VAL-UNI-001` · 15-16 `VAL-UNI-004` · **17 `VAL-UNI-003` contra el catálogo**:
+  GTIN `07500001234563` con alcance `Producto`, que choca con la **fila ancla**
+  (`1001293`, Robert Bosch México, `Presentación · Caja máster · 24`) · 18-19
   CF-51775-29 (dos `No GS1`, mismo código, proveedores distintos: **sin incidencia**,
   cuentan como `Nuevas`).
-- La fila ancla (`02`) existe **para que la fila 19 sea reproducible** en cualquier
+- Fuera de un archivo de filas: los rechazos de estructura (`VAL-EST-001/002/003/007`,
+  que tumban el archivo entero), `VAL-UNI-002` (solo el formulario), `VAL-UNI-005`
+  (aviso) y los códigos sin disparador (`VAL-UNI-006`, `VAL-GS1-001`).
+- La fila ancla (`02`) existe **para que la fila 17 sea reproducible** en cualquier
   sesión.
 
 ## Criterios de aceptación
@@ -210,15 +215,17 @@ en `filteredRows()` (el mismo criterio que el alta manual).
 - [ ] Celda con fórmula `=A1` → `VAL-EST-006`; la misma cadena como **texto** no.
 - [ ] Código proveedor de solo espacios → `VAL-EST-004` (no `-005`); de 51
       caracteres → `VAL-EST-005`.
-- [ ] `Importar-correctos.xlsx` → `Nuevas=5`, sin incidencias, `Continuar` visible;
-      con `Estatus=Activo` el toast final es **ámbar** y nombra `1175731`; con
-      `Todos` es verde y aparecen las 5.
-- [ ] `Importar-incompletos.xlsx` → `VALIDACIÓN FALLIDA`, 18 filas con error, sin
-      `Continuar` (el botón dice `Cerrar`). Al filtrar `Tipo error = VAL-UNI-003`
-      salen **tres filas: 15, 16 y 19**; el detalle de la 19 dice `El GTIN ya está
-      en el catálogo con otro destino: código 1001293, Presentación, Caja máster,
-      cantidad 24`, y el de la 15 y la 16 `El GTIN aparece en el archivo con
-      destinos distintos`. El resultado es **idéntico en una sesión nueva**.
+- [ ] `Importar-correctos.xlsx` → `Nuevas=5`, sin incidencias, `Continuar` visible; al
+      continuar, el toast es **verde** y las 5 filas se ven con los filtros iniciales.
+      Para el aviso ámbar de fila fuera de la vista, cambia a `Inactivo` el estatus de
+      una fila antes de importar (con `Estatus=Activo` sin tocar sale ámbar y nombra
+      su código; con `Todos` aparecen las 5).
+- [ ] `Importar-incompletos.xlsx` → `VALIDACIÓN FALLIDA`, 16 filas con error, 2 nuevas,
+      sin `Continuar` (el botón dice `Cerrar`), y **cada uno de los 14 códigos
+      aparece**. Al filtrar `Tipo error = VAL-UNI-003` sale **una sola fila, la 17**,
+      con `El GTIN ya está en el catálogo con otro destino: código 1001293,
+      Presentación, Caja máster, cantidad 24`. El resultado es **idéntico en una
+      sesión nueva**.
 - [ ] Los contadores suman el total; la tabla lista solo filas con incidencia.
 - [ ] Cabe en 1280×720, 1366×768, 1440×900 y 1920×1080 sin necesidad de subirse
-      con las 20 filas de ejemplo (la lista pagina a 25).
+      con las 18 filas de ejemplo (la lista pagina a 25).

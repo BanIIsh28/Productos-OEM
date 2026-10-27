@@ -96,7 +96,7 @@ Para cada caso, genera el archivo y anota código y mensaje obtenidos:
 | Código proveedor de solo espacios | `VAL-EST-004` (no `-005`) |
 | Alcance `Producto` con `Empaque`/`Cantidad` vacíos | se completan `Unidad`/`1` y la previsualización lo muestra |
 | `Importar-correctos.xlsx` | `RES-VAL-001`, `Nuevas=5`, `Continuar` visible |
-| `Importar-incompletos.xlsx` | `RES-VAL-002`, 18 filas con error, 2 nuevas, botón `Cerrar`; los 14 códigos de incidencia presentes |
+| `Importar-incompletos.xlsx` | `RES-VAL-002`, 16 filas con error, 2 nuevas, botón `Cerrar`; los 14 códigos de incidencia presentes, uno por caso |
 | Plantilla descargada → importar | `VALIDADA`, 1 nueva |
 | Exportación → importar | sin errores estructurales |
 
@@ -107,17 +107,17 @@ Además:
 3. El filtro `Tipo error` muestra «código · alias», ordenado por filas afectadas
    (desc), luego `ERROR` antes que `INFORMACION`, luego código. Filtrar y ordenar
    por `Fila`/`Detalle` funcionan y vuelven a la página 1.
-4. **Unicidad contra el catálogo (fila ancla):** fila 19 de `Importar-incompletos`
+4. **Unicidad contra el catálogo (fila ancla):** fila 17 de `Importar-incompletos`
    → `VAL-UNI-003` con `…código 1001293, Presentación, Caja máster, cantidad 24`.
    **Recargar la página y repetir:** resultado idéntico.
 5. Una fila idéntica a un registro **activo** → `Sin cambio` (no error); idéntica a
    uno **inactivo** → `Con aviso` (`VAL-UNI-005`), no bloquea.
-6. **`Continuar` con `Importar-correctos.xlsx` y `Estatus=Activo` (sin tocarlo):**
-   toast **ámbar** `Se aplicó el archivo: 5 equivalencias nuevas, aunque la del
-   código 1175731 no se muestra con los filtros aplicados`; los otros 4 códigos se
-   ven. Cambiar a `Todos` → las 5 aparecen. Repetir con `Todos` desde el inicio →
-   toast **verde** sin la cola.
-7. Previsualización: cabe sin scroll de página en las 4 resoluciones con las 20
+6. **`Continuar` con `Importar-correctos.xlsx`:** toast **verde** `Se aplicó el archivo: 5
+   equivalencias nuevas` y las 5 filas visibles con los filtros iniciales. **Fila
+   fuera de la vista:** cambia a `Inactivo` el estatus de una fila del archivo y
+   repite con `Estatus=Activo` sin tocarlo → toast **ámbar** `…, aunque la del código
+   {código} no se muestra con los filtros aplicados`; con `Todos` aparecen las 5.
+7. Previsualización: cabe sin scroll de página en las 4 resoluciones con las 18
    filas del archivo de incompletos; **solo se «sube»** cuando no cabe.
 
 ## F. Bitácora (`08`)

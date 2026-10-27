@@ -324,7 +324,7 @@ Además, **si aun así no cabe, arranca más arriba** —`clamp(16px, 4vh, 40px)
 lugar de `clamp(60px, 16vh, 220px)`—; una previsualización corta, como la de un
 archivo sin incidencias o la de un rechazo estructural, abre a la misma altura
 que el resto de las ventanas del módulo. Con el archivo de ejemplo más cargado
-—20 filas, 18 con incidencia— cabe completa en 1280×720, 1366×768, 1440×900 y
+—18 filas, 16 con incidencia— cabe completa en 1280×720, 1366×768, 1440×900 y
 1920×1080 sin necesidad de subirse, porque la lista de incidencias pagina a 25 y
 no crece más allá de su propio alto.
 
